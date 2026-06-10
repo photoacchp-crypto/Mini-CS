@@ -16,151 +16,194 @@
 
 <div class="layout">
 
-    <aside class="sidebar" id="sidebar">
+```
+<aside class="sidebar" id="sidebar">
 
-        <h1 class="logo">
-            📋 Online CS Pro
-        </h1>
+    <h1 class="logo">
+        📋 Online CS Pro
+    </h1>
 
-        <nav>
+    <nav>
 
-            <button
-                class="menu-btn active"
-                data-view="dashboard">
-                📊 Dashboard
-            </button>
+        <button
+            class="menu-btn active"
+            data-view="dashboard">
+            📊 Dashboard
+        </button>
 
-            <button
-                class="menu-btn"
-                data-view="kategori">
+        <button
+            class="menu-btn"
+            data-view="kategori">
+            📂 Kategori
+        </button>
+
+        <button
+            class="menu-btn"
+            data-view="grup">
+            🗂 Grup
+        </button>
+
+        <button
+            class="menu-btn"
+            data-view="favorit">
+            ⭐ Favorit
+        </button>
+
+    </nav>
+
+    <div class="sidebar-filter">
+
+        <details open>
+
+            <summary>
                 📂 Kategori
+            </summary>
+
+            <select id="kategoriFilter">
+                <option value="">
+                    Semua Kategori
+                </option>
+            </select>
+
+        </details>
+
+        <details>
+
+            <summary>
+                🗂 Grup
+            </summary>
+
+            <select id="grupFilter">
+                <option value="">
+                    Semua Grup
+                </option>
+            </select>
+
+        </details>
+
+        <details>
+
+            <summary>
+                📌 Status
+            </summary>
+
+            <select id="statusFilter">
+                <option value="">
+                    Semua Status
+                </option>
+            </select>
+
+        </details>
+
+        <details>
+
+            <summary>
+                💻 Platform
+            </summary>
+
+            <select id="platformFilter">
+                <option value="">
+                    Semua Platform
+                </option>
+            </select>
+
+        </details>
+
+        <details>
+
+            <summary>
+                ⚡ Prioritas
+            </summary>
+
+            <select id="prioritasFilter">
+                <option value="">
+                    Semua Prioritas
+                </option>
+            </select>
+
+        </details>
+
+    </div>
+
+</aside>
+
+<main class="main">
+
+    <div class="topbar">
+
+        <div class="topbar-left">
+
+            <button
+                id="toggleSidebar"
+                class="icon-btn">
+                ☰
+            </button>
+
+            <div class="search-box">
+
+                <input
+                    id="searchInput"
+                    type="text"
+                    placeholder="Cari judul, kategori, grup, platform..."
+                >
+
+                <button
+                    id="clearSearch"
+                    class="clear-btn">
+                    ✕
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="topbar-actions">
+
+            <button
+                id="refreshBtn"
+                class="icon-btn"
+                title="Refresh Data">
+                🔄
             </button>
 
             <button
-                class="menu-btn"
-                data-view="grup">
-                🗂 Grup
+                id="themeToggle"
+                class="icon-btn"
+                title="Dark / Light">
+                🌙
             </button>
 
-        </nav>
-
-        <div class="sidebar-filter">
-
-            <details open>
-                <summary>📂 Kategori</summary>
-
-                <select id="kategoriFilter">
-                    <option value="">
-                        Semua Kategori
-                    </option>
-                </select>
-
-            </details>
-
-            <details>
-                <summary>🗂 Grup</summary>
-
-                <select id="grupFilter">
-                    <option value="">
-                        Semua Grup
-                    </option>
-                </select>
-
-            </details>
-
-            <details>
-                <summary>📌 Status</summary>
-
-                <select id="statusFilter">
-                    <option value="">
-                        Semua Status
-                    </option>
-                </select>
-
-            </details>
-
-            <details>
-                <summary>💻 Platform</summary>
-
-                <select id="platformFilter">
-                    <option value="">
-                        Semua Platform
-                    </option>
-                </select>
-
-            </details>
-
-            <details>
-                <summary>⚡ Prioritas</summary>
-
-                <select id="prioritasFilter">
-                    <option value="">
-                        Semua Prioritas
-                    </option>
-                </select>
-
-            </details>
-
         </div>
 
-    </aside>
+    </div>
 
-    <main class="main">
+    <section
+        id="stats"
+        class="stats">
+    </section>
 
-        <div class="topbar">
+    <section
+        id="content">
+    </section>
 
-            <div class="topbar-left">
+</main>
+```
 
-                <button
-                    id="toggleSidebar"
-                    class="icon-btn">
-                    ☰
-                </button>
+</div>
 
-                <div class="search-box">
+<div id="modal" class="modal">
 
-                    <input
-                        id="searchInput"
-                        type="text"
-                        placeholder="Cari judul, kategori, grup..."
-                    >
+```
+<div class="modal-content">
 
-                    <button
-                        id="clearSearch"
-                        class="clear-btn">
-                        ✕
-                    </button>
+    <span id="closeModal">
+        &times;
+    </span>
 
-                </div>
+    <div id="modalBody"></div>
 
-            </div>
-
-            <div class="topbar-actions">
-
-                <button
-                    id="refreshBtn"
-                    class="icon-btn">
-                    🔄
-                </button>
-
-                <button
-                    id="themeToggle"
-                    class="icon-btn">
-                    🌙
-                </button>
-
-            </div>
-
-        </div>
-
-        <section
-            id="stats"
-            class="stats">
-        </section>
-
-        <section id="content"></section>
-
-    </main>
+</div>
+```
 
 </div>
 
@@ -196,17 +239,21 @@ themeToggle.addEventListener("click",()=>{
 
 });
 
-if(localStorage.getItem("theme")==="light"){
+if(
+    localStorage.getItem("theme")
+    ===
+    "light"
+){
 
-    document.body.classList.add("light");
+    document.body.classList.add(
+        "light"
+    );
 
 }
 
 </script>
 
 <script src="js/App.js"></script>
-
-</body>
 
 </body>
 </html>
