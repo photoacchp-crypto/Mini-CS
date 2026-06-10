@@ -1,540 +1,623 @@
+// ==================== KONFIGURASI API ====================
 const API_URL = "https://script.google.com/macros/s/AKfycbyrznbrQDzNXiPc0fJ0fXxClPGtGktm2iTMZbzhin-o6ZenmlZfIbUp4RoCuzTPp5zH/exec";
 
+// ==================== STATE GLOBAL ====================
 let allData = [];
 let currentView = "dashboard";
+let currentFilters = {
+    kategori: "",
+    grup: "",
+    status: "",
+    platform: "",
+    prioritas: ""
+};
+let searchKeyword = "";
 let isLoading = false;
+let lastUpdateTime = null;
+let refreshInterval = null;
 
-// DOM Elements
-const sidebar = document.getElementById('sidebar');
-const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-const sidebarToggle = document.getElementById('sidebarToggle');
-const searchInput = document.getElementById('searchInput');
-const searchClear = document.getElementById('searchClear');
-const refreshBtn = document.getElementById('refreshBtn');
-const lastUpdateSpan = document.getElementById('lastUpdate');
-const themeToggle = document.getElementById('themeToggle');
-const filtersToggle = document.getElementById('filtersToggle');
-const filtersBody = document.getElementById('filtersBody');
-const filtersIcon = document.getElementById('filtersIcon');
-const content = document.getElementById('content');
-const stats = document.getElementById('stats');
-const modal = document.getElementById('modal');
-const modalTitle = document.getElementById('modalTitle');
-const modalBody = document.getElementById('modalBody');
-const closeModal = document.getElementById('closeModal');
-const toast = document.getElementById('toast');
+// ==================== DOM ELEMENTS ====================
+const statsContainer = document.getElementById("statsContainer");
+const contentContainer = document.getElementById("contentContainer");
+const searchInput = document.getElementById("searchInput");
+const searchClear = document.getElementById("searchClear");
+const refreshBtn = document.getElementById("refreshBtn");
+const lastUpdateSpan = document.getElementById("lastUpdate");
+const themeToggle = document.getElementById("themeToggle");
+const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+const sidebar = document.getElementById("sidebar");
+const filtersHeader = document.getElementById("filtersHeader");
+const filtersBody = document.getElementById("filtersBody");
+const kategoriFilter = document.getElementById("kategoriFilter");
+const grupFilter = document.getElementById("grupFilter");
+const statusFilter = document.getElementById("statusFilter");
+const platformFilter = document.getElementById("platformFilter");
+const prioritasFilter = document.getElementById("prioritasFilter");
 
-// Filter elements
-const kategoriFilter = document.getElementById('kategoriFilter');
-const grupFilter = document.getElementById('grupFilter');
-const statusFilter = document.getElementById('statusFilter');
-const platformFilter = document.getElementById('platformFilter');
-const prioritasFilter = document.getElementById('prioritasFilter');
+// ==================== HELPER FUNCTIONS ====================
+function formatTime(date) {
+    return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
 
-// ============ Helper Functions ============
-function showToast(message) {
-    toast.querySelector('span').textContent = message;
-    toast.classList.add('show');
+function updateLastUpdateTime() {
+    if (lastUpdateTime) {
+        lastUpdateSpan.textContent = formatTime(lastUpdateTime);
+    }
+}
+
+function showToast(message, type = "success") {
+    const existingToast = document.querySelector(".toast");
+    if (existingToast) existingToast.remove();
+    
+    const toast = document.createElement("div");
+    toast.className = "toast";
+    const icon = type === "success" ? "✅" : type === "error" ? "❌" : "ℹ️";
+    toast.innerHTML = `${icon} ${message}`;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.classList.add("show"), 10);
     setTimeout(() => {
-        toast.classList.remove('show');
-    }, 2000);
-}
-
-function formatDate() {
-    const now = new Date();
-    return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-}
-
-function updateLastUpdate() {
-    lastUpdateSpan.textContent = `Last update: ${formatDate()}`;
-}
-
-// ============ Data Loading ============
-async function loadData(showLoading = true) {
-    if (isLoading) return;
-    
-    isLoading = true;
-    
-    if (showLoading) {
-        content.innerHTML = `<div class="loading"><i class="fas fa-spinner"></i> Loading data...</div>`;
-    }
-    
-    try {
-        const res = await fetch(API_URL);
-        const json = await res.json();
-        
-        if (json.data && Array.isArray(json.data)) {
-            allData = json.data;
-            updateLastUpdate();
-            renderStats();
-            populateFilters();
-            renderContent();
-            showToast('Data berhasil diperbarui');
-        } else {
-            throw new Error('Invalid data format');
-        }
-    } catch (err) {
-        console.error('Error loading data:', err);
-        content.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Gagal memuat data. Periksa koneksi Anda.</p></div>`;
-        showToast('Gagal memuat data');
-    } finally {
-        isLoading = false;
-    }
-}
-
-// ============ Helper Functions ============
-function unique(field) {
-    return [...new Set(allData.map(x => x[field]).filter(Boolean))];
-}
-
-function populateFilters() {
-    const currentValues = {
-        kategori: kategoriFilter.value,
-        grup: grupFilter.value,
-        status: statusFilter.value,
-        platform: platformFilter.value,
-        prioritas: prioritasFilter.value
-    };
-    
-    fillSelect(kategoriFilter, "Kategori", currentValues.kategori);
-    fillSelect(grupFilter, "Grup", currentValues.grup);
-    fillSelect(statusFilter, "Status", currentValues.status);
-    fillSelect(platformFilter, "Platform", currentValues.platform);
-    fillSelect(prioritasFilter, "Prioritas", currentValues.prioritas);
-}
-
-function fillSelect(selectElement, key, currentValue) {
-    const items = unique(key);
-    selectElement.innerHTML = `<option value="">Semua ${key}</option>`;
-    items.forEach(item => {
-        selectElement.innerHTML += `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`;
-    });
-    selectElement.value = currentValue;
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
 
 function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
+    if (!text) return "";
+    const div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
 }
 
-// ============ Filter Data ============
-function filterData() {
-    const searchTerm = searchInput.value.toLowerCase().trim();
-    
-    return allData.filter(item => {
-        // Search across all fields
-        if (searchTerm) {
-            const searchableText = [
-                item.Judul,
-                item.Kategori,
-                item.Grup,
-                item.Platform,
-                item.Pertanyaan,
-                item["Jawaban 1"],
-                item["Jawaban 2"],
-                item["Jawaban 3"],
-                item["Jawaban 4"],
-                item.Status,
-                item.Prioritas
-            ].filter(Boolean).join(' ').toLowerCase();
-            
-            if (!searchableText.includes(searchTerm)) return false;
-        }
-        
-        // Category filter
-        if (kategoriFilter.value && item.Kategori !== kategoriFilter.value) return false;
-        
-        // Group filter
-        if (grupFilter.value && item.Grup !== grupFilter.value) return false;
-        
-        // Status filter
-        if (statusFilter.value && item.Status !== statusFilter.value) return false;
-        
-        // Platform filter
-        if (platformFilter.value && item.Platform !== platformFilter.value) return false;
-        
-        // Priority filter
-        if (prioritasFilter.value && item.Prioritas !== prioritasFilter.value) return false;
-        
-        // Favorite filter
-        if (currentView === "favorit" && String(item.Favorit).toUpperCase() !== "TRUE") return false;
-        
-        return true;
-    });
+function getUniqueValues(field) {
+    return [...new Set(allData.map(item => item[field]).filter(v => v && v.trim() !== ""))].sort();
 }
 
-// ============ Render Stats ============
+function getFilteredData() {
+    let data = [...allData];
+    
+    // Search filter - semua field
+    if (searchKeyword.trim() !== "") {
+        const keyword = searchKeyword.toLowerCase();
+        data = data.filter(item => {
+            return Object.values(item).some(value => 
+                value && String(value).toLowerCase().includes(keyword)
+            );
+        });
+    }
+    
+    // Category filter
+    if (currentFilters.kategori) {
+        data = data.filter(item => item.Kategori === currentFilters.kategori);
+    }
+    
+    // Group filter
+    if (currentFilters.grup) {
+        data = data.filter(item => item.Grup === currentFilters.grup);
+    }
+    
+    // Status filter
+    if (currentFilters.status) {
+        data = data.filter(item => item.Status === currentFilters.status);
+    }
+    
+    // Platform filter
+    if (currentFilters.platform) {
+        data = data.filter(item => item.Platform === currentFilters.platform);
+    }
+    
+    // Priority filter
+    if (currentFilters.prioritas) {
+        data = data.filter(item => item.Prioritas === currentFilters.prioritas);
+    }
+    
+    // Favorit view
+    if (currentView === "favorit") {
+        data = data.filter(item => String(item.Favorit).toUpperCase() === "TRUE");
+    }
+    
+    return data;
+}
+
+// ==================== RENDER FUNCTIONS ====================
 function renderStats() {
     const totalData = allData.length;
-    const totalKategori = unique("Kategori").length;
-    const totalGrup = unique("Grup").length;
-    const totalPlatform = unique("Platform").length;
-    const totalFavorit = allData.filter(x => String(x.Favorit).toUpperCase() === "TRUE").length;
+    const totalKategori = getUniqueValues("Kategori").length;
+    const totalGrup = getUniqueValues("Grup").length;
+    const totalPlatform = getUniqueValues("Platform").length;
+    const totalFavorit = allData.filter(item => String(item.Favorit).toUpperCase() === "TRUE").length;
     
-    stats.innerHTML = `
-        <div class="stat-card">
-            <h2>${totalData}</h2>
+    statsContainer.innerHTML = `
+        <div class="stat-card" data-stat="total">
+            <h2>${totalData.toLocaleString()}</h2>
             <p><i class="fas fa-database"></i> Total Data</p>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" data-stat="kategori">
             <h2>${totalKategori}</h2>
             <p><i class="fas fa-folder-tree"></i> Kategori</p>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" data-stat="grup">
             <h2>${totalGrup}</h2>
             <p><i class="fas fa-layer-group"></i> Grup</p>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" data-stat="platform">
             <h2>${totalPlatform}</h2>
-            <p><i class="fas fa-mobile-alt"></i> Platform</p>
+            <p><i class="fas fa-globe"></i> Platform</p>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" data-stat="favorit">
             <h2>${totalFavorit}</h2>
             <p><i class="fas fa-star"></i> Favorit</p>
         </div>
     `;
-}
-
-// ============ Render Content Based on View ============
-function renderContent() {
-    const filtered = filterData();
     
-    switch (currentView) {
-        case "dashboard":
-            renderDashboard(filtered);
-            break;
-        case "kategori":
-            renderKategori(filtered);
-            break;
-        case "grup":
-            renderGrup(filtered);
-            break;
-        case "favorit":
-            renderDashboard(filtered);
-            break;
-        default:
-            renderDashboard(filtered);
-    }
+    // Add click handlers to stat cards
+    document.querySelectorAll(".stat-card").forEach(card => {
+        card.addEventListener("click", () => {
+            const type = card.dataset.stat;
+            if (type === "favorit") {
+                currentView = "favorit";
+                setActiveMenu("favorit");
+                renderContent();
+                showToast("Menampilkan data favorit");
+            } else if (type === "total") {
+                currentView = "dashboard";
+                setActiveMenu("dashboard");
+                resetFilters();
+                renderContent();
+            } else {
+                // Reset view and highlight category filter
+                currentView = "dashboard";
+                setActiveMenu("dashboard");
+                renderContent();
+            }
+        });
+    });
 }
 
-function renderDashboard(data) {
-    if (data.length === 0) {
-        content.innerHTML = `<div class="empty-state"><i class="fas fa-search"></i><p>Tidak ada data yang ditemukan</p></div>`;
+function renderContent() {
+    if (!contentContainer) return;
+    
+    const filteredData = getFilteredData();
+    
+    if (filteredData.length === 0) {
+        contentContainer.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-search"></i>
+                <p>Tidak ada data yang ditemukan</p>
+                <small>Coba dengan kata kunci atau filter yang berbeda</small>
+            </div>
+        `;
         return;
     }
     
-    content.innerHTML = `<div class="cards-grid">${data.map(item => renderCard(item)).join('')}</div>`;
+    if (currentView === "kategori") {
+        renderKategoriView(filteredData);
+    } else if (currentView === "grup") {
+        renderGrupView(filteredData);
+    } else {
+        renderDashboardView(filteredData);
+    }
 }
 
-function renderCard(item) {
-    const previewText = [item.Pertanyaan, item["Jawaban 1"]].filter(Boolean)[0] || '';
-    const truncatedPreview = previewText.length > 100 ? previewText.substring(0, 100) + '...' : previewText;
-    
-    return `
-        <div class="content-card">
-            <h3>${escapeHtml(item.Judul || '-')}</h3>
-            <div class="card-meta">
-                <span class="meta-badge"><i class="fas fa-tag"></i> ${escapeHtml(item.Kategori || '-')}</span>
-                <span class="meta-badge"><i class="fas fa-layer-group"></i> ${escapeHtml(item.Grup || '-')}</span>
-                <span class="meta-badge"><i class="fas fa-mobile-alt"></i> ${escapeHtml(item.Platform || '-')}</span>
-                ${String(item.Favorit).toUpperCase() === 'TRUE' ? '<span class="meta-badge"><i class="fas fa-star" style="color: #f59e0b;"></i> Favorit</span>' : ''}
-            </div>
-            <div class="card-preview">${escapeHtml(truncatedPreview)}</div>
-            <button class="preview-btn" onclick="showModal(${JSON.stringify(item).replace(/</g, '\\u003c')})">
-                <i class="fas fa-eye"></i> Preview & Copy
-            </button>
+function renderDashboardView(data) {
+    contentContainer.innerHTML = `
+        <div class="cards-grid">
+            ${data.map(item => `
+                <div class="content-card" data-item='${JSON.stringify(item).replace(/'/g, "&#39;")}'>
+                    <h3>
+                        <i class="fas fa-comment-dots"></i>
+                        ${escapeHtml(item.Judul || "Tanpa Judul")}
+                    </h3>
+                    <div class="card-meta">
+                        <span class="meta-badge"><i class="fas fa-tag"></i> ${escapeHtml(item.Kategori || "-")}</span>
+                        <span class="meta-badge"><i class="fas fa-users"></i> ${escapeHtml(item.Grup || "-")}</span>
+                        <span class="meta-badge"><i class="fas fa-chart-line"></i> ${escapeHtml(item.Prioritas || "-")}</span>
+                        <span class="meta-badge"><i class="fas fa-globe"></i> ${escapeHtml(item.Platform || "-")}</span>
+                        ${String(item.Favorit).toUpperCase() === "TRUE" ? '<span class="meta-badge"><i class="fas fa-star"></i> Favorit</span>' : ''}
+                    </div>
+                    <div class="card-preview">
+                        ${escapeHtml((item.Pertanyaan || "").substring(0, 120))}${(item.Pertanyaan || "").length > 120 ? "..." : ""}
+                    </div>
+                    <button class="preview-btn" onclick="openModal(${JSON.stringify(item).replace(/'/g, "&#39;")})">
+                        <i class="fas fa-eye"></i> Preview & Salin
+                    </button>
+                </div>
+            `).join("")}
         </div>
     `;
 }
 
-async function renderKategori(data) {
-    const kategoriMap = {};
-    
+function renderKategoriView(data) {
+    const kategoriMap = new Map();
     data.forEach(item => {
-        if (item.Kategori) {
-            if (!kategoriMap[item.Kategori]) {
-                kategoriMap[item.Kategori] = [];
-            }
-            kategoriMap[item.Kategori].push(item);
+        const kategori = item.Kategori || "Tidak Berkategori";
+        if (!kategoriMap.has(kategori)) {
+            kategoriMap.set(kategori, []);
         }
+        kategoriMap.get(kategori).push(item);
     });
     
-    const sortedKategori = Object.keys(kategoriMap).sort();
-    
-    if (sortedKategori.length === 0) {
-        content.innerHTML = `<div class="empty-state"><i class="fas fa-folder-open"></i><p>Tidak ada kategori</p></div>`;
-        return;
-    }
-    
-    let html = '<div class="categories-list">';
-    
-    for (const kategori of sortedKategori) {
-        const items = kategoriMap[kategori];
-        const categoryId = `cat_${kategori.replace(/[^a-zA-Z0-9]/g, '_')}`;
-        
-        html += `
-            <div class="category-item" data-category="${escapeHtml(kategori)}">
-                <div class="category-header" onclick="toggleCategory('${categoryId}')">
+    contentContainer.innerHTML = Array.from(kategoriMap.entries())
+        .sort((a, b) => b[1].length - a[1].length)
+        .map(([kategori, items]) => `
+            <div class="category-item">
+                <div class="category-header" onclick="toggleCategory('cat-${kategori.replace(/[^a-zA-Z0-9]/g, '')}')">
                     <div class="category-info">
                         <i class="fas fa-folder"></i>
                         <h4>${escapeHtml(kategori)}</h4>
                         <span class="category-count">${items.length} item</span>
                     </div>
-                    <i class="fas fa-chevron-down category-expand" id="${categoryId}_icon"></i>
+                    <i class="fas fa-chevron-down category-expand" id="cat-icon-${kategori.replace(/[^a-zA-Z0-9]/g, '')}"></i>
                 </div>
-                <div class="category-items" id="${categoryId}">
-                    <div class="cards-grid">
-                        ${items.map(item => renderCard(item)).join('')}
-                    </div>
+                <div class="category-items" id="cat-${kategori.replace(/[^a-zA-Z0-9]/g, '')}">
+                    ${items.slice(0, 10).map(item => `
+                        <div class="item-preview" onclick="openModal(${JSON.stringify(item).replace(/'/g, "&#39;")})">
+                            <div class="item-preview-title">
+                                <span><i class="fas fa-question-circle"></i> ${escapeHtml(item.Judul || "Pertanyaan")}</span>
+                                <button class="copy-mini" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(item["Jawaban 1"] || "").replace(/'/g, "\\'")}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <div class="item-preview-text">${escapeHtml((item.Pertanyaan || "").substring(0, 80))}...</div>
+                        </div>
+                    `).join("")}
+                    ${items.length > 10 ? `<div class="item-preview" style="text-align: center; color: var(--accent-primary);">+ ${items.length - 10} item lainnya</div>` : ""}
                 </div>
             </div>
-        `;
-    }
-    
-    html += '</div>';
-    content.innerHTML = html;
+        `).join("");
 }
 
-async function renderGrup(data) {
-    const grupMap = {};
-    
+function renderGrupView(data) {
+    const grupMap = new Map();
     data.forEach(item => {
-        if (item.Grup) {
-            if (!grupMap[item.Grup]) {
-                grupMap[item.Grup] = [];
-            }
-            grupMap[item.Grup].push(item);
+        const grup = item.Grup || "Tidak Bergrup";
+        if (!grupMap.has(grup)) {
+            grupMap.set(grup, []);
         }
+        grupMap.get(grup).push(item);
     });
     
-    const sortedGrup = Object.keys(grupMap).sort();
-    
-    if (sortedGrup.length === 0) {
-        content.innerHTML = `<div class="empty-state"><i class="fas fa-layer-group"></i><p>Tidak ada grup</p></div>`;
-        return;
-    }
-    
-    let html = '<div class="groups-list">';
-    
-    for (const grup of sortedGrup) {
-        const items = grupMap[grup];
-        const groupId = `grp_${grup.replace(/[^a-zA-Z0-9]/g, '_')}`;
-        
-        html += `
-            <div class="group-item" data-group="${escapeHtml(grup)}">
-                <div class="group-header" onclick="toggleGroup('${groupId}')">
+    contentContainer.innerHTML = Array.from(grupMap.entries())
+        .sort((a, b) => b[1].length - a[1].length)
+        .map(([grup, items]) => `
+            <div class="group-item">
+                <div class="group-header" onclick="toggleGroup('grp-${grup.replace(/[^a-zA-Z0-9]/g, '')}')">
                     <div class="group-info">
                         <i class="fas fa-layer-group"></i>
                         <h4>${escapeHtml(grup)}</h4>
                         <span class="group-count">${items.length} item</span>
                     </div>
-                    <i class="fas fa-chevron-down group-expand" id="${groupId}_icon"></i>
+                    <i class="fas fa-chevron-down group-expand" id="grp-icon-${grup.replace(/[^a-zA-Z0-9]/g, '')}"></i>
                 </div>
-                <div class="group-items" id="${groupId}">
-                    <div class="cards-grid">
-                        ${items.map(item => renderCard(item)).join('')}
-                    </div>
+                <div class="group-items" id="grp-${grup.replace(/[^a-zA-Z0-9]/g, '')}">
+                    ${items.slice(0, 10).map(item => `
+                        <div class="item-preview" onclick="openModal(${JSON.stringify(item).replace(/'/g, "&#39;")})">
+                            <div class="item-preview-title">
+                                <span><i class="fas fa-question-circle"></i> ${escapeHtml(item.Judul || "Pertanyaan")}</span>
+                                <button class="copy-mini" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(item["Jawaban 1"] || "").replace(/'/g, "\\'")}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <div class="item-preview-text">${escapeHtml((item.Pertanyaan || "").substring(0, 80))}...</div>
+                        </div>
+                    `).join("")}
+                    ${items.length > 10 ? `<div class="item-preview" style="text-align: center; color: var(--accent-primary);">+ ${items.length - 10} item lainnya</div>` : ""}
                 </div>
             </div>
-        `;
-    }
-    
-    html += '</div>';
-    content.innerHTML = html;
+        `).join("");
 }
 
-// Toggle functions for categories and groups
-window.toggleCategory = function(id) {
-    const element = document.getElementById(id);
-    const icon = document.getElementById(`${id}_icon`);
-    if (element) {
-        element.classList.toggle('show');
-        icon.classList.toggle('expanded');
-    }
-};
+// ==================== FILTER FUNCTIONS ====================
+function populateFilters() {
+    // Populate Kategori
+    const kategoriOptions = getUniqueValues("Kategori");
+    kategoriFilter.innerHTML = '<option value="">📂 Semua Kategori</option>' + 
+        kategoriOptions.map(k => `<option value="${k}">${k}</option>`).join("");
+    
+    // Populate Grup
+    const grupOptions = getUniqueValues("Grup");
+    grupFilter.innerHTML = '<option value="">🗂️ Semua Grup</option>' + 
+        grupOptions.map(g => `<option value="${g}">${g}</option>`).join("");
+    
+    // Populate Status
+    const statusOptions = getUniqueValues("Status");
+    statusFilter.innerHTML = '<option value="">📌 Semua Status</option>' + 
+        statusOptions.map(s => `<option value="${s}">${s}</option>`).join("");
+    
+    // Populate Platform
+    const platformOptions = getUniqueValues("Platform");
+    platformFilter.innerHTML = '<option value="">🌐 Semua Platform</option>' + 
+        platformOptions.map(p => `<option value="${p}">${p}</option>`).join("");
+    
+    // Populate Prioritas
+    const prioritasOptions = getUniqueValues("Prioritas");
+    prioritasFilter.innerHTML = '<option value="">⚡ Semua Prioritas</option>' + 
+        prioritasOptions.map(p => `<option value="${p}">${p}</option>`).join("");
+}
 
-window.toggleGroup = function(id) {
-    const element = document.getElementById(id);
-    const icon = document.getElementById(`${id}_icon`);
-    if (element) {
-        element.classList.toggle('show');
-        icon.classList.toggle('expanded');
-    }
-};
+function resetFilters() {
+    currentFilters = {
+        kategori: "",
+        grup: "",
+        status: "",
+        platform: "",
+        prioritas: ""
+    };
+    
+    kategoriFilter.value = "";
+    grupFilter.value = "";
+    statusFilter.value = "";
+    platformFilter.value = "";
+    prioritasFilter.value = "";
+    searchKeyword = "";
+    searchInput.value = "";
+}
 
-// ============ Modal Functions ============
-window.showModal = function(item) {
-    modalTitle.textContent = item.Judul || 'Detail';
+function applyFilters() {
+    currentFilters.kategori = kategoriFilter.value;
+    currentFilters.grup = grupFilter.value;
+    currentFilters.status = statusFilter.value;
+    currentFilters.platform = platformFilter.value;
+    currentFilters.prioritas = prioritasFilter.value;
+    renderContent();
+}
+
+// ==================== MODAL FUNCTIONS ====================
+function openModal(item) {
+    const modal = document.getElementById("modal");
+    const modalBody = document.getElementById("modalBody");
     
-    let html = `
-        <div class="modal-section">
-            <h4><i class="fas fa-tag"></i> Kategori</h4>
-            <p>${escapeHtml(item.Kategori || '-')}</p>
-        </div>
-        <div class="modal-section">
-            <h4><i class="fas fa-layer-group"></i> Grup</h4>
-            <p>${escapeHtml(item.Grup || '-')}</p>
-        </div>
-        <div class="modal-section">
-            <h4><i class="fas fa-circle-info"></i> Status</h4>
-            <p>${escapeHtml(item.Status || '-')}</p>
-        </div>
-        <div class="modal-section">
-            <h4><i class="fas fa-mobile-alt"></i> Platform</h4>
-            <p>${escapeHtml(item.Platform || '-')}</p>
-        </div>
-        <div class="modal-section">
-            <h4><i class="fas fa-flag"></i> Prioritas</h4>
-            <p>${escapeHtml(item.Prioritas || '-')}</p>
-        </div>
-    `;
-    
-    if (item.Pertanyaan) {
-        html += `
-            <div class="modal-section">
-                <h4><i class="fas fa-question-circle"></i> Pertanyaan</h4>
-                <p>${escapeHtml(item.Pertanyaan)}</p>
-            </div>
-        `;
-    }
-    
-    const answers = ["Jawaban 1", "Jawaban 2", "Jawaban 3", "Jawaban 4"];
-    answers.forEach((answerKey, index) => {
-        if (item[answerKey]) {
-            const answerText = item[answerKey];
-            html += `
+    let answersHtml = "";
+    ["Jawaban 1", "Jawaban 2", "Jawaban 3", "Jawaban 4"].forEach((jawab, index) => {
+        if (item[jawab]) {
+            answersHtml += `
                 <div class="answer-block">
-                    <h5><i class="fas fa-reply"></i> ${answerKey}</h5>
-                    <p>${escapeHtml(answerText)}</p>
-                    <button class="copy-btn" onclick="copyText(\`${escapeHtml(answerText).replace(/`/g, '\\`')}\`)">
-                        <i class="fas fa-copy"></i> Salin
+                    <h5><i class="fas fa-reply-all"></i> ${jawab}</h5>
+                    <p>${escapeHtml(item[jawab])}</p>
+                    <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(item[jawab]).replace(/'/g, "\\'")}')">
+                        <i class="fas fa-copy"></i> Salin Jawaban
                     </button>
                 </div>
             `;
         }
     });
     
-    modalBody.innerHTML = html;
+    modalBody.innerHTML = `
+        <div class="modal-section">
+            <h4><i class="fas fa-heading"></i> Judul</h4>
+            <p>${escapeHtml(item.Judul || "-")}</p>
+        </div>
+        <div class="modal-section">
+            <h4><i class="fas fa-info-circle"></i> Informasi</h4>
+            <p>
+                <strong>Kategori:</strong> ${escapeHtml(item.Kategori || "-")} | 
+                <strong>Grup:</strong> ${escapeHtml(item.Grup || "-")} | 
+                <strong>Platform:</strong> ${escapeHtml(item.Platform || "-")}<br>
+                <strong>Status:</strong> ${escapeHtml(item.Status || "-")} | 
+                <strong>Prioritas:</strong> ${escapeHtml(item.Prioritas || "-")}
+                ${String(item.Favorit).toUpperCase() === "TRUE" ? ' | <strong><i class="fas fa-star"></i> Favorit</strong>' : ''}
+            </p>
+        </div>
+        <div class="modal-section">
+            <h4><i class="fas fa-question-circle"></i> Pertanyaan</h4>
+            <p>${escapeHtml(item.Pertanyaan || "-")}</p>
+        </div>
+        ${answersHtml}
+    `;
+    
     modal.style.display = "flex";
-};
+}
 
-window.copyText = async function(text) {
-    try {
-        await navigator.clipboard.writeText(text);
-        showToast('Berhasil disalin!');
-    } catch (err) {
-        console.error('Copy failed:', err);
-        showToast('Gagal menyalin');
+function closeModal() {
+    const modal = document.getElementById("modal");
+    modal.style.display = "none";
+}
+
+function copyToClipboard(text) {
+    if (!text) {
+        showToast("Tidak ada teks untuk disalin", "error");
+        return;
     }
-};
+    
+    navigator.clipboard.writeText(text).then(() => {
+        showToast("✅ Teks berhasil disalin ke clipboard");
+    }).catch(() => {
+        showToast("Gagal menyalin teks", "error");
+    });
+}
 
-// Close modal
-closeModal.onclick = () => modal.style.display = "none";
-window.onclick = (e) => {
-    if (e.target === modal) modal.style.display = "none";
-};
+// ==================== MENU FUNCTIONS ====================
+function setActiveMenu(view) {
+    document.querySelectorAll(".menu-btn").forEach(btn => {
+        btn.classList.remove("active");
+    });
+    
+    const activeBtn = document.querySelector(`.menu-btn[data-view="${view}"]`);
+    if (activeBtn) activeBtn.classList.add("active");
+}
 
-// ============ Navigation ============
-document.querySelectorAll(".menu-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".menu-btn").forEach(x => x.classList.remove("active"));
-        btn.classList.add("active");
-        currentView = btn.dataset.view;
+function changeView(view) {
+    currentView = view;
+    setActiveMenu(view);
+    renderContent();
+}
+
+// ==================== TOGGLE FUNCTIONS ====================
+function toggleCategory(id) {
+    const element = document.getElementById(id);
+    const icon = document.getElementById(`cat-icon-${id.replace("cat-", "")}`);
+    if (element) {
+        element.classList.toggle("show");
+        if (icon) icon.classList.toggle("expanded");
+    }
+}
+
+function toggleGroup(id) {
+    const element = document.getElementById(id);
+    const icon = document.getElementById(`grp-icon-${id.replace("grp-", "")}`);
+    if (element) {
+        element.classList.toggle("show");
+        if (icon) icon.classList.toggle("expanded");
+    }
+}
+
+function toggleFilters() {
+    filtersBody.classList.toggle("hidden");
+    filtersHeader.classList.toggle("collapsed");
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute("data-theme");
+    const newTheme = currentTheme === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", newTheme);
+    localStorage.setItem("theme", newTheme);
+    
+    const icon = themeToggle.querySelector("i");
+    const span = themeToggle.querySelector("span");
+    if (newTheme === "light") {
+        icon.className = "fas fa-sun";
+        span.textContent = "Light";
+    } else {
+        icon.className = "fas fa-moon";
+        span.textContent = "Dark";
+    }
+    
+    showToast(`Mode ${newTheme === "light" ? "Terang" : "Gelap"} diaktifkan`);
+}
+
+function toggleSidebar() {
+    sidebar.classList.toggle("open");
+}
+
+// ==================== DATA LOADING ====================
+async function loadData(showToastMessage = false) {
+    if (isLoading) return;
+    
+    isLoading = true;
+    refreshBtn.classList.add("spinning");
+    
+    try {
+        const response = await fetch(API_URL);
+        const result = await response.json();
+        allData = result.data || [];
+        lastUpdateTime = new Date();
+        updateLastUpdateTime();
+        
+        populateFilters();
+        renderStats();
         renderContent();
         
-        // Close sidebar on mobile after navigation
-        if (window.innerWidth <= 768) {
-            sidebar.classList.remove('open');
+        if (showToastMessage) {
+            showToast(`✅ Data berhasil dimuat (${allData.length} item)`);
+        }
+    } catch (error) {
+        console.error("Error loading data:", error);
+        showToast("❌ Gagal memuat data dari server", "error");
+    } finally {
+        isLoading = false;
+        refreshBtn.classList.remove("spinning");
+    }
+}
+
+function refreshData() {
+    loadData(true);
+}
+
+// ==================== SEARCH FUNCTIONS ====================
+function handleSearch() {
+    searchKeyword = searchInput.value;
+    renderContent();
+}
+
+function clearSearch() {
+    searchInput.value = "";
+    searchKeyword = "";
+    renderContent();
+    showToast("Pencarian dibersihkan");
+}
+
+// ==================== EVENT LISTENERS ====================
+function initEventListeners() {
+    // Search
+    searchInput.addEventListener("input", handleSearch);
+    searchClear.addEventListener("click", clearSearch);
+    
+    // Refresh
+    refreshBtn.addEventListener("click", refreshData);
+    
+    // Theme
+    themeToggle.addEventListener("click", toggleTheme);
+    
+    // Mobile menu
+    mobileMenuBtn.addEventListener("click", toggleSidebar);
+    
+    // Filters toggle
+    filtersHeader.addEventListener("click", toggleFilters);
+    
+    // Filter changes
+    kategoriFilter.addEventListener("change", applyFilters);
+    grupFilter.addEventListener("change", applyFilters);
+    statusFilter.addEventListener("change", applyFilters);
+    platformFilter.addEventListener("change", applyFilters);
+    prioritasFilter.addEventListener("change", applyFilters);
+    
+    // Menu buttons
+    document.querySelectorAll(".menu-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const view = btn.dataset.view;
+            changeView(view);
+            if (window.innerWidth <= 768) {
+                toggleSidebar();
+            }
+        });
+    });
+    
+    // Modal close
+    const modal = document.getElementById("modal");
+    const closeModalBtn = document.getElementById("closeModal");
+    closeModalBtn.addEventListener("click", closeModal);
+    window.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
+    });
+    
+    // Close sidebar on click outside (mobile)
+    document.addEventListener("click", (e) => {
+        if (window.innerWidth <= 768 && sidebar.classList.contains("open")) {
+            if (!sidebar.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+                sidebar.classList.remove("open");
+            }
         }
     });
-});
-
-// ============ Event Listeners ============
-// Search
-searchInput.addEventListener("input", () => {
-    searchClear.style.display = searchInput.value ? "block" : "none";
-    renderContent();
-});
-
-searchClear.addEventListener("click", () => {
-    searchInput.value = "";
-    searchClear.style.display = "none";
-    renderContent();
-});
-
-// Filters
-const filterElements = [kategoriFilter, grupFilter, statusFilter, platformFilter, prioritasFilter];
-filterElements.forEach(el => {
-    if (el) el.addEventListener("change", renderContent);
-});
-
-// Refresh
-refreshBtn.addEventListener("click", async () => {
-    refreshBtn.classList.add('spinning');
-    await loadData(true);
-    setTimeout(() => refreshBtn.classList.remove('spinning'), 500);
-});
-
-// Theme Toggle
-function initTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    updateThemeButton(savedTheme);
 }
 
-function updateThemeButton(theme) {
-    const icon = themeToggle.querySelector('i');
-    const span = themeToggle.querySelector('span');
-    if (theme === 'light') {
-        icon.className = 'fas fa-sun';
-        span.textContent = 'Light Mode';
+// ==================== AUTO REFRESH ====================
+function startAutoRefresh() {
+    if (refreshInterval) clearInterval(refreshInterval);
+    refreshInterval = setInterval(() => {
+        loadData(false);
+    }, 30000);
+}
+
+// ==================== INITIALIZATION ====================
+function init() {
+    // Load saved theme
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    
+    const themeIcon = themeToggle.querySelector("i");
+    const themeSpan = themeToggle.querySelector("span");
+    if (savedTheme === "light") {
+        themeIcon.className = "fas fa-sun";
+        themeSpan.textContent = "Light";
     } else {
-        icon.className = 'fas fa-moon';
-        span.textContent = 'Dark Mode';
+        themeIcon.className = "fas fa-moon";
+        themeSpan.textContent = "Dark";
     }
+    
+    initEventListeners();
+    startAutoRefresh();
+    loadData(true);
 }
 
-themeToggle.addEventListener("click", () => {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    updateThemeButton(newTheme);
-});
-
-// Filters Collapsible
-let filtersCollapsed = false;
-filtersToggle.addEventListener("click", () => {
-    filtersCollapsed = !filtersCollapsed;
-    filtersBody.classList.toggle('hidden', filtersCollapsed);
-    filtersToggle.classList.toggle('collapsed', filtersCollapsed);
-});
-
-// Mobile Sidebar
-mobileMenuBtn.addEventListener("click", () => {
-    sidebar.classList.add('open');
-});
-
-sidebarToggle.addEventListener("click", () => {
-    sidebar.classList.remove('open');
-});
-
-// Close sidebar when clicking outside on mobile
-document.addEventListener("click", (e) => {
-    if (window.innerWidth <= 768) {
-        if (!sidebar.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
-            sidebar.classList.remove('open');
-        }
-    }
-});
-
-// ============ Initialization ============
-initTheme();
-loadData();
-
-// Auto refresh every 30 seconds
-setInterval(() => {
-    loadData(false);
-}, 30000);
+// Start the application
+init();
