@@ -3,209 +3,169 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyrznbrQDzNXiPc0fJ0fXxC
 let allData = [];
 let currentView = "dashboard";
 let isLoading = false;
-let refreshTimer = null;
-let searchDebounce = null;
 
 // DOM Elements
-let searchInput, clearSearch, kategoriFilter, grupFilter, statusFilter, platformFilter, prioritasFilter;
-let content, stats, lastUpdate, themeToggle, refreshBtn, openSidebar, closeSidebar, sidebar, main;
-let filterToggle, filtersPanel;
+const sidebar = document.getElementById('sidebar');
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const sidebarToggle = document.getElementById('sidebarToggle');
+const searchInput = document.getElementById('searchInput');
+const searchClear = document.getElementById('searchClear');
+const refreshBtn = document.getElementById('refreshBtn');
+const lastUpdateSpan = document.getElementById('lastUpdate');
+const themeToggle = document.getElementById('themeToggle');
+const filtersToggle = document.getElementById('filtersToggle');
+const filtersBody = document.getElementById('filtersBody');
+const filtersIcon = document.getElementById('filtersIcon');
+const content = document.getElementById('content');
+const stats = document.getElementById('stats');
+const modal = document.getElementById('modal');
+const modalTitle = document.getElementById('modalTitle');
+const modalBody = document.getElementById('modalBody');
+const closeModal = document.getElementById('closeModal');
+const toast = document.getElementById('toast');
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    // Get elements
-    searchInput = document.getElementById('searchInput');
-    clearSearch = document.getElementById('clearSearch');
-    kategoriFilter = document.getElementById('kategoriFilter');
-    grupFilter = document.getElementById('grupFilter');
-    statusFilter = document.getElementById('statusFilter');
-    platformFilter = document.getElementById('platformFilter');
-    prioritasFilter = document.getElementById('prioritasFilter');
-    content = document.getElementById('content');
-    stats = document.getElementById('stats');
-    lastUpdate = document.getElementById('lastUpdate');
-    themeToggle = document.getElementById('themeToggle');
-    refreshBtn = document.getElementById('refreshBtn');
-    openSidebar = document.getElementById('openSidebar');
-    closeSidebar = document.getElementById('closeSidebar');
-    sidebar = document.getElementById('sidebar');
-    main = document.querySelector('.main');
-    filterToggle = document.getElementById('filterToggle');
-    filtersPanel = document.getElementById('filtersPanel');
-    
-    // Load theme preference
-    loadTheme();
-    
-    // Setup event listeners
-    setupEventListeners();
-    
-    // Load data
-    loadData();
-    
-    // Auto refresh every 5 minutes (without polling, manual + silent)
-    if (refreshTimer) clearInterval(refreshTimer);
-    refreshTimer = setInterval(silentRefresh, 300000);
-});
+// Filter elements
+const kategoriFilter = document.getElementById('kategoriFilter');
+const grupFilter = document.getElementById('grupFilter');
+const statusFilter = document.getElementById('statusFilter');
+const platformFilter = document.getElementById('platformFilter');
+const prioritasFilter = document.getElementById('prioritasFilter');
 
-function setupEventListeners() {
-    // Search
-    searchInput.addEventListener('input', handleSearch);
-    clearSearch.addEventListener('click', clearSearchInput);
-    
-    // Filters
-    [kategoriFilter, grupFilter, statusFilter, platformFilter, prioritasFilter].forEach(filter => {
-        filter.addEventListener('change', () => renderContent());
-    });
-    
-    // Menu buttons
-    document.querySelectorAll('.menu-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.menu-btn').forEach(x => x.classList.remove('active'));
-            btn.classList.add('active');
-            currentView = btn.dataset.view;
-            renderContent();
-        });
-    });
-    
-    // Theme
-    themeToggle.addEventListener('click', toggleTheme);
-    
-    // Refresh
-    refreshBtn.addEventListener('click', () => {
-        showToast('🔄 Memuat ulang data...');
-        loadData(true);
-    });
-    
-    // Sidebar toggle
-    openSidebar.addEventListener('click', () => {
-        sidebar.classList.add('open');
-    });
-    
-    closeSidebar.addEventListener('click', () => {
-        sidebar.classList.remove('open');
-    });
-    
-    // Close sidebar on click outside (mobile)
-    document.addEventListener('click', (e) => {
-        if (window.innerWidth <= 768) {
-            if (!sidebar.contains(e.target) && !openSidebar.contains(e.target)) {
-                sidebar.classList.remove('open');
-            }
-        }
-    });
-    
-    // Filter toggle
-    if (filterToggle) {
-        filterToggle.addEventListener('click', () => {
-            filterToggle.classList.toggle('open');
-            filtersPanel.classList.toggle('show');
-        });
-    }
-    
-    // Modal close
-    const modal = document.getElementById('modal');
-    const closeModal = document.getElementById('closeModal');
-    closeModal.onclick = () => modal.style.display = 'none';
-    window.onclick = (e) => {
-        if (e.target === modal) modal.style.display = 'none';
-    };
+// ============ Helper Functions ============
+function showToast(message) {
+    toast.querySelector('span').textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 2000);
 }
 
-function handleSearch() {
-    if (searchDebounce) clearTimeout(searchDebounce);
-    searchDebounce = setTimeout(() => {
-        renderContent();
-    }, 300);
-    clearSearch.classList.toggle('visible', searchInput.value.length > 0);
+function formatDate() {
+    const now = new Date();
+    return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
 }
 
-function clearSearchInput() {
-    searchInput.value = '';
-    clearSearch.classList.remove('visible');
-    renderContent();
+function updateLastUpdate() {
+    lastUpdateSpan.textContent = `Last update: ${formatDate()}`;
 }
 
+// ============ Data Loading ============
 async function loadData(showLoading = true) {
     if (isLoading) return;
+    
     isLoading = true;
     
     if (showLoading) {
-        content.innerHTML = `
-            <div class="loading">
-                <div class="loading-spinner"></div>
-                <p>Memuat data dari spreadsheet...</p>
-            </div>
-        `;
+        content.innerHTML = `<div class="loading"><i class="fas fa-spinner"></i> Loading data...</div>`;
     }
     
     try {
         const res = await fetch(API_URL);
         const json = await res.json();
-        allData = json.data || [];
         
-        // Update last update time
-        const now = new Date();
-        lastUpdate.textContent = `Last update: ${now.toLocaleTimeString()}`;
-        
-        renderStats();
-        populateFilters();
-        renderContent();
-        
-        showToast(`✅ ${allData.length} data berhasil dimuat`, 2000);
-    } catch(err) {
-        console.error(err);
-        content.innerHTML = `
-            <div class="loading">
-                <p>❌ Gagal memuat data</p>
-                <button onclick="location.reload()" style="margin-top:16px;padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:white;cursor:pointer;">Coba Lagi</button>
-            </div>
-        `;
-        showToast('❌ Gagal memuat data dari spreadsheet', 3000);
+        if (json.data && Array.isArray(json.data)) {
+            allData = json.data;
+            updateLastUpdate();
+            renderStats();
+            populateFilters();
+            renderContent();
+            showToast('Data berhasil diperbarui');
+        } else {
+            throw new Error('Invalid data format');
+        }
+    } catch (err) {
+        console.error('Error loading data:', err);
+        content.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Gagal memuat data. Periksa koneksi Anda.</p></div>`;
+        showToast('Gagal memuat data');
     } finally {
         isLoading = false;
     }
 }
 
-async function silentRefresh() {
-    try {
-        const res = await fetch(API_URL);
-        const json = await res.json();
-        if (json.data && json.data.length !== allData.length) {
-            allData = json.data;
-            renderStats();
-            populateFilters();
-            renderContent();
-            const now = new Date();
-            lastUpdate.textContent = `Last update: ${now.toLocaleTimeString()}`;
-            showToast('🔄 Data telah diperbarui', 2000);
-        }
-    } catch(err) {
-        console.error('Silent refresh failed:', err);
-    }
-}
-
+// ============ Helper Functions ============
 function unique(field) {
     return [...new Set(allData.map(x => x[field]).filter(Boolean))];
 }
 
 function populateFilters() {
-    fillSelect(kategoriFilter, "Kategori", "Semua Kategori");
-    fillSelect(grupFilter, "Grup", "Semua Grup");
-    fillSelect(statusFilter, "Status", "Semua Status");
-    fillSelect(platformFilter, "Platform", "Semua Platform");
-    fillSelect(prioritasFilter, "Prioritas", "Semua Prioritas");
+    const currentValues = {
+        kategori: kategoriFilter.value,
+        grup: grupFilter.value,
+        status: statusFilter.value,
+        platform: platformFilter.value,
+        prioritas: prioritasFilter.value
+    };
+    
+    fillSelect(kategoriFilter, "Kategori", currentValues.kategori);
+    fillSelect(grupFilter, "Grup", currentValues.grup);
+    fillSelect(statusFilter, "Status", currentValues.status);
+    fillSelect(platformFilter, "Platform", currentValues.platform);
+    fillSelect(prioritasFilter, "Prioritas", currentValues.prioritas);
 }
 
-function fillSelect(select, key, defaultLabel) {
-    if (!select) return;
-    const current = select.value;
-    select.innerHTML = `<option value="">${defaultLabel}</option>`;
-    unique(key).forEach(item => {
-        select.innerHTML += `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`;
+function fillSelect(selectElement, key, currentValue) {
+    const items = unique(key);
+    selectElement.innerHTML = `<option value="">Semua ${key}</option>`;
+    items.forEach(item => {
+        selectElement.innerHTML += `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`;
     });
-    select.value = current;
+    selectElement.value = currentValue;
 }
 
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ============ Filter Data ============
+function filterData() {
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    
+    return allData.filter(item => {
+        // Search across all fields
+        if (searchTerm) {
+            const searchableText = [
+                item.Judul,
+                item.Kategori,
+                item.Grup,
+                item.Platform,
+                item.Pertanyaan,
+                item["Jawaban 1"],
+                item["Jawaban 2"],
+                item["Jawaban 3"],
+                item["Jawaban 4"],
+                item.Status,
+                item.Prioritas
+            ].filter(Boolean).join(' ').toLowerCase();
+            
+            if (!searchableText.includes(searchTerm)) return false;
+        }
+        
+        // Category filter
+        if (kategoriFilter.value && item.Kategori !== kategoriFilter.value) return false;
+        
+        // Group filter
+        if (grupFilter.value && item.Grup !== grupFilter.value) return false;
+        
+        // Status filter
+        if (statusFilter.value && item.Status !== statusFilter.value) return false;
+        
+        // Platform filter
+        if (platformFilter.value && item.Platform !== platformFilter.value) return false;
+        
+        // Priority filter
+        if (prioritasFilter.value && item.Prioritas !== prioritasFilter.value) return false;
+        
+        // Favorite filter
+        if (currentView === "favorit" && String(item.Favorit).toUpperCase() !== "TRUE") return false;
+        
+        return true;
+    });
+}
+
+// ============ Render Stats ============
 function renderStats() {
     const totalData = allData.length;
     const totalKategori = unique("Kategori").length;
@@ -216,275 +176,365 @@ function renderStats() {
     stats.innerHTML = `
         <div class="stat-card">
             <h2>${totalData}</h2>
-            <p>Total Data</p>
+            <p><i class="fas fa-database"></i> Total Data</p>
         </div>
         <div class="stat-card">
             <h2>${totalKategori}</h2>
-            <p>Total Kategori</p>
+            <p><i class="fas fa-folder-tree"></i> Kategori</p>
         </div>
         <div class="stat-card">
             <h2>${totalGrup}</h2>
-            <p>Total Grup</p>
+            <p><i class="fas fa-layer-group"></i> Grup</p>
         </div>
         <div class="stat-card">
             <h2>${totalPlatform}</h2>
-            <p>Total Platform</p>
+            <p><i class="fas fa-mobile-alt"></i> Platform</p>
         </div>
         <div class="stat-card">
             <h2>${totalFavorit}</h2>
-            <p>⭐ Favorit</p>
+            <p><i class="fas fa-star"></i> Favorit</p>
         </div>
     `;
 }
 
-function filterData() {
-    const search = searchInput.value.toLowerCase().trim();
-    
-    return allData.filter(item => {
-        // Search across all fields
-        if (search) {
-            const searchableText = [
-                item.Judul, item.Kategori, item.Grup, item.Platform,
-                item.Pertanyaan, item["Jawaban 1"], item["Jawaban 2"],
-                item["Jawaban 3"], item["Jawaban 4"], item.Status, item.Prioritas
-            ].filter(Boolean).join(" ").toLowerCase();
-            
-            if (!searchableText.includes(search)) return false;
-        }
-        
-        // Filters
-        if (kategoriFilter.value && item.Kategori !== kategoriFilter.value) return false;
-        if (grupFilter.value && item.Grup !== grupFilter.value) return false;
-        if (statusFilter.value && item.Status !== statusFilter.value) return false;
-        if (platformFilter.value && item.Platform !== platformFilter.value) return false;
-        if (prioritasFilter.value && item.Prioritas !== prioritasFilter.value) return false;
-        if (currentView === "favorit" && String(item.Favorit).toUpperCase() !== "TRUE") return false;
-        
-        return true;
-    });
-}
-
+// ============ Render Content Based on View ============
 function renderContent() {
-    let data = filterData();
+    const filtered = filterData();
     
-    if (currentView === "kategori") {
-        renderKategoriView(data);
-    } else if (currentView === "grup") {
-        renderGrupView(data);
-    } else {
-        renderDashboardView(data);
+    switch (currentView) {
+        case "dashboard":
+            renderDashboard(filtered);
+            break;
+        case "kategori":
+            renderKategori(filtered);
+            break;
+        case "grup":
+            renderGrup(filtered);
+            break;
+        case "favorit":
+            renderDashboard(filtered);
+            break;
+        default:
+            renderDashboard(filtered);
     }
 }
 
-function renderKategoriView(data) {
-    const map = {};
-    data.forEach(item => {
-        const kategori = item.Kategori || "Tanpa Kategori";
-        if (!map[kategori]) map[kategori] = [];
-        map[kategori].push(item);
-    });
-    
-    content.innerHTML = `
-        <div class="category-grid">
-            ${Object.entries(map).sort().map(([kategori, items]) => `
-                <div class="category-card">
-                    <div class="category-header" onclick="toggleCategory('${kategori.replace(/'/g, "\\'")}')">
-                        <h3>📁 ${escapeHtml(kategori)}</h3>
-                        <span class="category-count">${items.length} item</span>
-                    </div>
-                    <div class="category-items" id="cat-${kategori.replace(/[^a-zA-Z0-9]/g, '_')}">
-                        ${items.map(item => `
-                            <div class="category-item">
-                                <div class="category-item-title">${escapeHtml(item.Judul || '-')}</div>
-                                <button class="category-item-copy" onclick='copyItemToClipboard(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
-                                    📋 Copy
-                                </button>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-}
-
-function renderGrupView(data) {
-    const map = {};
-    data.forEach(item => {
-        const grup = item.Grup || "Tanpa Grup";
-        if (!map[grup]) map[grup] = [];
-        map[grup].push(item);
-    });
-    
-    content.innerHTML = `
-        <div class="group-grid">
-            ${Object.entries(map).sort().map(([grup, items]) => `
-                <div class="group-card">
-                    <div class="group-header" onclick="toggleGroup('${grup.replace(/'/g, "\\'")}')">
-                        <h3>🗂️ ${escapeHtml(grup)}</h3>
-                        <span class="group-count">${items.length} item</span>
-                    </div>
-                    <div class="group-items" id="grp-${grup.replace(/[^a-zA-Z0-9]/g, '_')}">
-                        ${items.map(item => `
-                            <div class="group-item">
-                                <div class="group-item-title">${escapeHtml(item.Judul || '-')}</div>
-                                <button class="group-item-copy" onclick='copyItemToClipboard(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
-                                    📋 Copy
-                                </button>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-}
-
-function renderDashboardView(data) {
+function renderDashboard(data) {
     if (data.length === 0) {
-        content.innerHTML = `
-            <div class="loading">
-                <p>📭 Tidak ada data yang ditemukan</p>
-            </div>
-        `;
+        content.innerHTML = `<div class="empty-state"><i class="fas fa-search"></i><p>Tidak ada data yang ditemukan</p></div>`;
         return;
     }
     
-    content.innerHTML = `
-        <div class="cards">
-            ${data.map(item => `
-                <div class="card">
-                    <h3>${escapeHtml(item.Judul || '-')}</h3>
-                    <div class="card-badges">
-                        ${item.Kategori ? `<span class="badge badge-kategori">📁 ${escapeHtml(item.Kategori)}</span>` : ''}
-                        ${item.Grup ? `<span class="badge badge-grup">🗂️ ${escapeHtml(item.Grup)}</span>` : ''}
-                        ${item.Platform ? `<span class="badge badge-platform">💻 ${escapeHtml(item.Platform)}</span>` : ''}
-                        ${item.Status ? `<span class="badge badge-status">📌 ${escapeHtml(item.Status)}</span>` : ''}
-                        ${item.Prioritas ? `<span class="badge badge-prioritas">⚡ ${escapeHtml(item.Prioritas)}</span>` : ''}
-                    </div>
-                    <div class="card-desc">
-                        ${item.Pertanyaan ? escapeHtml(item.Pertanyaan.substring(0, 100)) + (item.Pertanyaan.length > 100 ? '...' : '') : ''}
-                    </div>
-                    <button class="preview-btn" onclick='showModal(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
-                        👁️ Preview & Copy
-                    </button>
-                </div>
-            `).join('')}
+    content.innerHTML = `<div class="cards-grid">${data.map(item => renderCard(item)).join('')}</div>`;
+}
+
+function renderCard(item) {
+    const previewText = [item.Pertanyaan, item["Jawaban 1"]].filter(Boolean)[0] || '';
+    const truncatedPreview = previewText.length > 100 ? previewText.substring(0, 100) + '...' : previewText;
+    
+    return `
+        <div class="content-card">
+            <h3>${escapeHtml(item.Judul || '-')}</h3>
+            <div class="card-meta">
+                <span class="meta-badge"><i class="fas fa-tag"></i> ${escapeHtml(item.Kategori || '-')}</span>
+                <span class="meta-badge"><i class="fas fa-layer-group"></i> ${escapeHtml(item.Grup || '-')}</span>
+                <span class="meta-badge"><i class="fas fa-mobile-alt"></i> ${escapeHtml(item.Platform || '-')}</span>
+                ${String(item.Favorit).toUpperCase() === 'TRUE' ? '<span class="meta-badge"><i class="fas fa-star" style="color: #f59e0b;"></i> Favorit</span>' : ''}
+            </div>
+            <div class="card-preview">${escapeHtml(truncatedPreview)}</div>
+            <button class="preview-btn" onclick="showModal(${JSON.stringify(item).replace(/</g, '\\u003c')})">
+                <i class="fas fa-eye"></i> Preview & Copy
+            </button>
         </div>
     `;
 }
 
-// Global functions for onclick
+async function renderKategori(data) {
+    const kategoriMap = {};
+    
+    data.forEach(item => {
+        if (item.Kategori) {
+            if (!kategoriMap[item.Kategori]) {
+                kategoriMap[item.Kategori] = [];
+            }
+            kategoriMap[item.Kategori].push(item);
+        }
+    });
+    
+    const sortedKategori = Object.keys(kategoriMap).sort();
+    
+    if (sortedKategori.length === 0) {
+        content.innerHTML = `<div class="empty-state"><i class="fas fa-folder-open"></i><p>Tidak ada kategori</p></div>`;
+        return;
+    }
+    
+    let html = '<div class="categories-list">';
+    
+    for (const kategori of sortedKategori) {
+        const items = kategoriMap[kategori];
+        const categoryId = `cat_${kategori.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        
+        html += `
+            <div class="category-item" data-category="${escapeHtml(kategori)}">
+                <div class="category-header" onclick="toggleCategory('${categoryId}')">
+                    <div class="category-info">
+                        <i class="fas fa-folder"></i>
+                        <h4>${escapeHtml(kategori)}</h4>
+                        <span class="category-count">${items.length} item</span>
+                    </div>
+                    <i class="fas fa-chevron-down category-expand" id="${categoryId}_icon"></i>
+                </div>
+                <div class="category-items" id="${categoryId}">
+                    <div class="cards-grid">
+                        ${items.map(item => renderCard(item)).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    content.innerHTML = html;
+}
+
+async function renderGrup(data) {
+    const grupMap = {};
+    
+    data.forEach(item => {
+        if (item.Grup) {
+            if (!grupMap[item.Grup]) {
+                grupMap[item.Grup] = [];
+            }
+            grupMap[item.Grup].push(item);
+        }
+    });
+    
+    const sortedGrup = Object.keys(grupMap).sort();
+    
+    if (sortedGrup.length === 0) {
+        content.innerHTML = `<div class="empty-state"><i class="fas fa-layer-group"></i><p>Tidak ada grup</p></div>`;
+        return;
+    }
+    
+    let html = '<div class="groups-list">';
+    
+    for (const grup of sortedGrup) {
+        const items = grupMap[grup];
+        const groupId = `grp_${grup.replace(/[^a-zA-Z0-9]/g, '_')}`;
+        
+        html += `
+            <div class="group-item" data-group="${escapeHtml(grup)}">
+                <div class="group-header" onclick="toggleGroup('${groupId}')">
+                    <div class="group-info">
+                        <i class="fas fa-layer-group"></i>
+                        <h4>${escapeHtml(grup)}</h4>
+                        <span class="group-count">${items.length} item</span>
+                    </div>
+                    <i class="fas fa-chevron-down group-expand" id="${groupId}_icon"></i>
+                </div>
+                <div class="group-items" id="${groupId}">
+                    <div class="cards-grid">
+                        ${items.map(item => renderCard(item)).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    content.innerHTML = html;
+}
+
+// Toggle functions for categories and groups
 window.toggleCategory = function(id) {
-    const element = document.getElementById(`cat-${id.replace(/[^a-zA-Z0-9]/g, '_')}`);
-    if (element) element.classList.toggle('open');
+    const element = document.getElementById(id);
+    const icon = document.getElementById(`${id}_icon`);
+    if (element) {
+        element.classList.toggle('show');
+        icon.classList.toggle('expanded');
+    }
 };
 
 window.toggleGroup = function(id) {
-    const element = document.getElementById(`grp-${id.replace(/[^a-zA-Z0-9]/g, '_')}`);
-    if (element) element.classList.toggle('open');
+    const element = document.getElementById(id);
+    const icon = document.getElementById(`${id}_icon`);
+    if (element) {
+        element.classList.toggle('show');
+        icon.classList.toggle('expanded');
+    }
 };
 
-window.copyItemToClipboard = function(item) {
-    const text = `${item.Judul || ''}\n\n${item.Pertanyaan || ''}\n\n${item["Jawaban 1"] || ''}${item["Jawaban 2"] ? '\n\n' + item["Jawaban 2"] : ''}${item["Jawaban 3"] ? '\n\n' + item["Jawaban 3"] : ''}${item["Jawaban 4"] ? '\n\n' + item["Jawaban 4"] : ''}`;
-    navigator.clipboard.writeText(text);
-    showToast('📋 Berhasil disalin ke clipboard!', 1500);
-};
-
+// ============ Modal Functions ============
 window.showModal = function(item) {
-    const modalBody = document.getElementById("modalBody");
-    const modalTitle = document.getElementById("modalTitle");
-    
-    modalTitle.textContent = item.Judul || "Detail";
+    modalTitle.textContent = item.Judul || 'Detail';
     
     let html = `
         <div class="modal-section">
-            <h4>📋 Informasi</h4>
-            <div class="modal-text">
-                <strong>Kategori:</strong> ${escapeHtml(item.Kategori || '-')}<br>
-                <strong>Grup:</strong> ${escapeHtml(item.Grup || '-')}<br>
-                <strong>Status:</strong> ${escapeHtml(item.Status || '-')}<br>
-                <strong>Platform:</strong> ${escapeHtml(item.Platform || '-')}<br>
-                <strong>Prioritas:</strong> ${escapeHtml(item.Prioritas || '-')}
-            </div>
+            <h4><i class="fas fa-tag"></i> Kategori</h4>
+            <p>${escapeHtml(item.Kategori || '-')}</p>
+        </div>
+        <div class="modal-section">
+            <h4><i class="fas fa-layer-group"></i> Grup</h4>
+            <p>${escapeHtml(item.Grup || '-')}</p>
+        </div>
+        <div class="modal-section">
+            <h4><i class="fas fa-circle-info"></i> Status</h4>
+            <p>${escapeHtml(item.Status || '-')}</p>
+        </div>
+        <div class="modal-section">
+            <h4><i class="fas fa-mobile-alt"></i> Platform</h4>
+            <p>${escapeHtml(item.Platform || '-')}</p>
+        </div>
+        <div class="modal-section">
+            <h4><i class="fas fa-flag"></i> Prioritas</h4>
+            <p>${escapeHtml(item.Prioritas || '-')}</p>
         </div>
     `;
     
     if (item.Pertanyaan) {
         html += `
             <div class="modal-section">
-                <h4>❓ Pertanyaan</h4>
-                <div class="modal-text">${escapeHtml(item.Pertanyaan)}</div>
-                <button class="copy-btn" onclick="copyText('${escapeHtml(item.Pertanyaan).replace(/'/g, "\\'")}')">📋 Copy</button>
+                <h4><i class="fas fa-question-circle"></i> Pertanyaan</h4>
+                <p>${escapeHtml(item.Pertanyaan)}</p>
             </div>
         `;
     }
     
-    ["Jawaban 1", "Jawaban 2", "Jawaban 3", "Jawaban 4"].forEach(key => {
-        if (item[key]) {
+    const answers = ["Jawaban 1", "Jawaban 2", "Jawaban 3", "Jawaban 4"];
+    answers.forEach((answerKey, index) => {
+        if (item[answerKey]) {
+            const answerText = item[answerKey];
             html += `
-                <div class="modal-section">
-                    <h4>💬 ${key}</h4>
-                    <div class="modal-text">${escapeHtml(item[key])}</div>
-                    <button class="copy-btn" onclick="copyText('${escapeHtml(item[key]).replace(/'/g, "\\'")}')">📋 Copy</button>
+                <div class="answer-block">
+                    <h5><i class="fas fa-reply"></i> ${answerKey}</h5>
+                    <p>${escapeHtml(answerText)}</p>
+                    <button class="copy-btn" onclick="copyText(\`${escapeHtml(answerText).replace(/`/g, '\\`')}\`)">
+                        <i class="fas fa-copy"></i> Salin
+                    </button>
                 </div>
             `;
         }
     });
     
     modalBody.innerHTML = html;
-    document.getElementById('modal').style.display = 'flex';
+    modal.style.display = "flex";
 };
 
-window.copyText = function(text) {
-    navigator.clipboard.writeText(text);
-    showToast('📋 Teks berhasil disalin!', 1500);
+window.copyText = async function(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        showToast('Berhasil disalin!');
+    } catch (err) {
+        console.error('Copy failed:', err);
+        showToast('Gagal menyalin');
+    }
 };
 
-function showToast(message, duration = 2000) {
-    const existingToast = document.querySelector('.toast');
-    if (existingToast) existingToast.remove();
-    
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.remove();
-    }, duration);
+// Close modal
+closeModal.onclick = () => modal.style.display = "none";
+window.onclick = (e) => {
+    if (e.target === modal) modal.style.display = "none";
+};
+
+// ============ Navigation ============
+document.querySelectorAll(".menu-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".menu-btn").forEach(x => x.classList.remove("active"));
+        btn.classList.add("active");
+        currentView = btn.dataset.view;
+        renderContent();
+        
+        // Close sidebar on mobile after navigation
+        if (window.innerWidth <= 768) {
+            sidebar.classList.remove('open');
+        }
+    });
+});
+
+// ============ Event Listeners ============
+// Search
+searchInput.addEventListener("input", () => {
+    searchClear.style.display = searchInput.value ? "block" : "none";
+    renderContent();
+});
+
+searchClear.addEventListener("click", () => {
+    searchInput.value = "";
+    searchClear.style.display = "none";
+    renderContent();
+});
+
+// Filters
+const filterElements = [kategoriFilter, grupFilter, statusFilter, platformFilter, prioritasFilter];
+filterElements.forEach(el => {
+    if (el) el.addEventListener("change", renderContent);
+});
+
+// Refresh
+refreshBtn.addEventListener("click", async () => {
+    refreshBtn.classList.add('spinning');
+    await loadData(true);
+    setTimeout(() => refreshBtn.classList.remove('spinning'), 500);
+});
+
+// Theme Toggle
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeButton(savedTheme);
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-function loadTheme() {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') {
-        document.documentElement.setAttribute('data-theme', 'light');
-        themeToggle.textContent = '🌙 Dark Mode';
+function updateThemeButton(theme) {
+    const icon = themeToggle.querySelector('i');
+    const span = themeToggle.querySelector('span');
+    if (theme === 'light') {
+        icon.className = 'fas fa-sun';
+        span.textContent = 'Light Mode';
     } else {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        themeToggle.textContent = '☀️ Light Mode';
+        icon.className = 'fas fa-moon';
+        span.textContent = 'Dark Mode';
     }
 }
 
-function toggleTheme() {
+themeToggle.addEventListener("click", () => {
     const currentTheme = document.documentElement.getAttribute('data-theme');
-    if (currentTheme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'light');
-        localStorage.setItem('theme', 'light');
-        themeToggle.textContent = '🌙 Dark Mode';
-    } else {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        localStorage.setItem('theme', 'dark');
-        themeToggle.textContent = '☀️ Light Mode';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeButton(newTheme);
+});
+
+// Filters Collapsible
+let filtersCollapsed = false;
+filtersToggle.addEventListener("click", () => {
+    filtersCollapsed = !filtersCollapsed;
+    filtersBody.classList.toggle('hidden', filtersCollapsed);
+    filtersToggle.classList.toggle('collapsed', filtersCollapsed);
+});
+
+// Mobile Sidebar
+mobileMenuBtn.addEventListener("click", () => {
+    sidebar.classList.add('open');
+});
+
+sidebarToggle.addEventListener("click", () => {
+    sidebar.classList.remove('open');
+});
+
+// Close sidebar when clicking outside on mobile
+document.addEventListener("click", (e) => {
+    if (window.innerWidth <= 768) {
+        if (!sidebar.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+            sidebar.classList.remove('open');
+        }
     }
-}
+});
+
+// ============ Initialization ============
+initTheme();
+loadData();
+
+// Auto refresh every 30 seconds
+setInterval(() => {
+    loadData(false);
+}, 30000);
