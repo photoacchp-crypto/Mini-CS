@@ -1,264 +1,336 @@
+// Konfigurasi API
 const API_URL = "https://script.google.com/macros/s/AKfycbyrznbrQDzNXiPc0fJ0fXxClPGtGktm2iTMZbzhin-o6ZenmlZfIbUp4RoCuzTPp5zH/exec";
 
+// State Management
 let allData = [];
 let currentView = "dashboard";
 let isLoading = false;
-let lastUpdateTime = null;
+let refreshInterval = null;
 
 // DOM Elements
-const content = document.getElementById("content");
-const searchInput = document.getElementById("searchInput");
-const searchClear = document.getElementById("searchClear");
-const kategoriFilter = document.getElementById("kategoriFilter");
-const grupFilter = document.getElementById("grupFilter");
-const statusFilter = document.getElementById("statusFilter");
-const platformFilter = document.getElementById("platformFilter");
-const prioritasFilter = document.getElementById("prioritasFilter");
-const modal = document.getElementById("modal");
-const modalBody = document.getElementById("modalBody");
-const modalTitle = document.getElementById("modalTitle");
-const loadingOverlay = document.getElementById("loadingOverlay");
-const lastUpdateSpan = document.getElementById("lastUpdate");
-const toast = document.getElementById("toast");
-const refreshBtn = document.getElementById("refreshBtn");
-const themeToggle = document.getElementById("themeToggle");
-const menuToggle = document.getElementById("menuToggle");
-const sidebar = document.getElementById("sidebar");
-const mobileOverlay = document.getElementById("mobileOverlay");
-const sidebarClose = document.getElementById("sidebarClose");
-const filterToggle = document.getElementById("filterToggle");
-const filterSection = document.querySelector(".filter-section");
+let searchInput, kategoriFilter, grupFilter, statusFilter, platformFilter, prioritasFilter;
+let content, stats, modal, modalBody;
 
-// Show toast notification
-function showToast(message, isError = false) {
-    toast.textContent = message;
-    if (isError) {
-        toast.style.background = "var(--danger)";
-    } else {
-        toast.style.background = "var(--success)";
+// Inisialisasi saat DOM siap
+document.addEventListener("DOMContentLoaded", () => {
+    // Inisialisasi DOM elements
+    searchInput = document.getElementById("searchInput");
+    kategoriFilter = document.getElementById("kategoriFilter");
+    grupFilter = document.getElementById("grupFilter");
+    statusFilter = document.getElementById("statusFilter");
+    platformFilter = document.getElementById("platformFilter");
+    prioritasFilter = document.getElementById("prioritasFilter");
+    content = document.getElementById("content");
+    stats = document.getElementById("stats");
+    modal = document.getElementById("modal");
+    modalBody = document.getElementById("modalBody");
+    
+    // Setup event listeners
+    setupEventListeners();
+    
+    // Load initial data
+    loadData();
+    
+    // Setup auto-refresh setiap 30 detik (tidak mengganggu)
+    startAutoRefresh();
+});
+
+// Setup semua event listeners
+function setupEventListeners() {
+    // Close modal
+    const closeModal = document.getElementById("closeModal");
+    if (closeModal) {
+        closeModal.onclick = () => modal.style.display = "none";
     }
-    toast.classList.add("show");
-    setTimeout(() => {
-        toast.classList.remove("show");
-        setTimeout(() => {
-            toast.style.background = "var(--success)";
-        }, 300);
-    }, 2500);
+    
+    window.onclick = (e) => {
+        if (e.target === modal) modal.style.display = "none";
+    };
+    
+    // Menu buttons
+    document.querySelectorAll(".menu-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".menu-btn").forEach(x => x.classList.remove("active"));
+            btn.classList.add("active");
+            currentView = btn.dataset.view;
+            renderContent();
+            
+            // Update URL hash untuk navigasi
+            window.location.hash = currentView;
+        });
+    });
+    
+    // Filter perubahan
+    const selects = [kategoriFilter, grupFilter, statusFilter, platformFilter, prioritasFilter];
+    selects.forEach(select => {
+        if (select) select.addEventListener("change", () => renderContent());
+    });
+    
+    // Search dengan debounce
+    if (searchInput) {
+        searchInput.addEventListener("input", debounce(() => renderContent(), 300));
+    }
+    
+    // Tombol reset pencarian
+    const resetSearchBtn = document.getElementById("resetSearch");
+    if (resetSearchBtn) {
+        resetSearchBtn.addEventListener("click", () => {
+            if (searchInput) searchInput.value = "";
+            renderContent();
+            showToast("Pencarian direset", 1500);
+        });
+    }
+    
+    // Tombol refresh manual
+    const refreshBtn = document.getElementById("refreshBtn");
+    if (refreshBtn) {
+        refreshBtn.addEventListener("click", () => {
+            loadData(true);
+        });
+    }
+    
+    // Tombol tema
+    const themeToggle = document.getElementById("themeToggle");
+    if (themeToggle) {
+        themeToggle.addEventListener("click", toggleTheme);
+    }
+    
+    // Tombol collapse sidebar
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener("click", toggleSidebar);
+    }
+    
+    // Filter collapsible
+    const filterHeader = document.getElementById("filterHeader");
+    if (filterHeader) {
+        filterHeader.addEventListener("click", () => {
+            const filterContent = document.getElementById("filterContent");
+            const arrow = document.getElementById("filterArrow");
+            if (filterContent.style.display === "none") {
+                filterContent.style.display = "flex";
+                if (arrow) arrow.textContent = "▼";
+            } else {
+                filterContent.style.display = "none";
+                if (arrow) arrow.textContent = "▶";
+            }
+        });
+    }
+    
+    // Handle hash change untuk navigasi
+    window.addEventListener("hashchange", () => {
+        const hash = window.location.hash.slice(1);
+        if (["dashboard", "kategori", "grup", "favorit"].includes(hash)) {
+            currentView = hash;
+            const activeBtn = document.querySelector(`.menu-btn[data-view="${hash}"]`);
+            if (activeBtn) {
+                document.querySelectorAll(".menu-btn").forEach(x => x.classList.remove("active"));
+                activeBtn.classList.add("active");
+                renderContent();
+            }
+        }
+    });
 }
 
-// Show/hide loading
-function setLoading(loading) {
-    isLoading = loading;
-    loadingOverlay.style.display = loading ? "flex" : "none";
+// Debounce function untuk optimize search
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }
 
-// Load data from API
-async function loadData(showLoading = true) {
+// Load data dari spreadsheet
+async function loadData(showToastMsg = false) {
     if (isLoading) return;
     
-    if (showLoading) setLoading(true);
+    isLoading = true;
+    
+    if (showToastMsg) {
+        showToast("Mengambil data terbaru...", 1000);
+    }
     
     try {
-        const res = await fetch(API_URL);
+        const res = await fetch(`${API_URL}?_=${Date.now()}`); // Cache busting
         const json = await res.json();
-        allData = json.data || [];
-        lastUpdateTime = new Date();
-        updateLastUpdateTime();
         
-        renderStats();
-        populateFilters();
-        renderContent();
+        if (json.data && Array.isArray(json.data)) {
+            allData = json.data;
+            renderStats();
+            populateFilters();
+            renderContent();
+            
+            if (showToastMsg) {
+                showToast(`✓ ${allData.length} data berhasil dimuat`, 2000);
+            }
+        } else {
+            throw new Error("Format data tidak valid");
+        }
+    } catch(err) {
+        console.error("Error loading data:", err);
+        showToast("Gagal memuat data. Periksa koneksi internet.", 3000);
         
-        showToast("Data berhasil diperbarui");
-    } catch (err) {
-        console.error(err);
-        showToast("Gagal memuat data", true);
+        // Tampilkan pesan error di content
+        if (content) {
+            content.innerHTML = `
+                <div class="error-message">
+                    <p>⚠️ Gagal memuat data dari spreadsheet</p>
+                    <small>${err.message}</small>
+                    <button onclick="location.reload()" class="retry-btn">Coba Lagi</button>
+                </div>
+            `;
+        }
     } finally {
-        if (showLoading) setLoading(false);
+        isLoading = false;
     }
 }
 
-// Update last update time display
-function updateLastUpdateTime() {
-    if (lastUpdateTime) {
-        const formatted = lastUpdateTime.toLocaleTimeString("id-ID");
-        lastUpdateSpan.textContent = `Terakhir: ${formatted}`;
+// Auto refresh dengan interval yang tidak mengganggu
+function startAutoRefresh() {
+    if (refreshInterval) clearInterval(refreshInterval);
+    refreshInterval = setInterval(() => {
+        if (!isLoading && document.visibilityState === "visible") {
+            loadData(false); // Silent refresh
+        }
+    }, 30000);
+}
+
+// Stop auto refresh (berguna untuk halaman yang tidak aktif)
+function stopAutoRefresh() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = null;
     }
 }
 
-// Get unique values from field
+// Unique values helper
 function unique(field) {
-    return [...new Set(allData.map(x => x[field]).filter(Boolean))].sort();
+    return [...new Set(allData.map(x => x[field]).filter(Boolean))];
 }
 
 // Populate filter dropdowns
 function populateFilters() {
-    fillSelect(kategoriFilter, "Kategori", "Semua Kategori");
-    fillSelect(grupFilter, "Grup", "Semua Grup");
-    fillSelect(statusFilter, "Status", "Semua Status");
-    fillSelect(platformFilter, "Platform", "Semua Platform");
-    fillSelect(prioritasFilter, "Prioritas", "Semua Prioritas");
+    fillSelect("kategoriFilter", "Kategori", kategoriFilter);
+    fillSelect("grupFilter", "Grup", grupFilter);
+    fillSelect("statusFilter", "Status", statusFilter);
+    fillSelect("platformFilter", "Platform", platformFilter);
+    fillSelect("prioritasFilter", "Prioritas", prioritasFilter);
 }
 
-function fillSelect(selectElement, key, defaultText) {
+function fillSelect(elementId, key, selectElement) {
+    if (!selectElement) return;
+    
     const current = selectElement.value;
-    selectElement.innerHTML = `<option value="">${defaultText}</option>`;
+    selectElement.innerHTML = `<option value="">Semua ${key}</option>`;
+    
     unique(key).forEach(item => {
         const option = document.createElement("option");
         option.value = item;
         option.textContent = item;
         selectElement.appendChild(option);
     });
+    
     selectElement.value = current;
 }
 
-// Render stats cards
+// Render statistics cards
 function renderStats() {
+    if (!stats) return;
+    
     const totalData = allData.length;
     const totalKategori = unique("Kategori").length;
     const totalGrup = unique("Grup").length;
     const totalPlatform = unique("Platform").length;
     const totalFavorit = allData.filter(x => String(x.Favorit).toUpperCase() === "TRUE").length;
-
-    document.getElementById("stats").innerHTML = `
+    
+    stats.innerHTML = `
         <div class="stat-card">
-            <h2>${totalData.toLocaleString()}</h2>
-            <p>Total Data</p>
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+                <h2>${totalData}</h2>
+                <p>Total Data</p>
+            </div>
         </div>
         <div class="stat-card">
-            <h2>${totalKategori}</h2>
-            <p>Kategori</p>
+            <div class="stat-icon">📂</div>
+            <div class="stat-info">
+                <h2>${totalKategori}</h2>
+                <p>Total Kategori</p>
+            </div>
         </div>
         <div class="stat-card">
-            <h2>${totalGrup}</h2>
-            <p>Grup</p>
+            <div class="stat-icon">🗂️</div>
+            <div class="stat-info">
+                <h2>${totalGrup}</h2>
+                <p>Total Grup</p>
+            </div>
         </div>
         <div class="stat-card">
-            <h2>${totalPlatform}</h2>
-            <p>Platform</p>
+            <div class="stat-icon">📱</div>
+            <div class="stat-info">
+                <h2>${totalPlatform}</h2>
+                <p>Total Platform</p>
+            </div>
         </div>
         <div class="stat-card">
-            <h2>${totalFavorit}</h2>
-            <p>Favorit</p>
+            <div class="stat-icon">⭐</div>
+            <div class="stat-info">
+                <h2>${totalFavorit}</h2>
+                <p>Total Favorit</p>
+            </div>
         </div>
     `;
 }
 
-// Filter data based on search and filters
+// Filter data berdasarkan search dan filter
 function filterData() {
-    const searchTerm = searchInput.value.toLowerCase().trim();
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
+    const kategoriVal = kategoriFilter ? kategoriFilter.value : "";
+    const grupVal = grupFilter ? grupFilter.value : "";
+    const statusVal = statusFilter ? statusFilter.value : "";
+    const platformVal = platformFilter ? platformFilter.value : "";
+    const prioritasVal = prioritasFilter ? prioritasFilter.value : "";
     
     return allData.filter(item => {
-        // Search across all fields
+        // Search di semua field
         if (searchTerm) {
             const searchableText = [
                 item.Judul,
                 item.Kategori,
                 item.Grup,
                 item.Platform,
+                item.Status,
+                item.Prioritas,
                 item.Pertanyaan,
                 item["Jawaban 1"],
                 item["Jawaban 2"],
                 item["Jawaban 3"],
-                item["Jawaban 4"],
-                item.Status,
-                item.Prioritas
+                item["Jawaban 4"]
             ].filter(Boolean).join(" ").toLowerCase();
             
             if (!searchableText.includes(searchTerm)) return false;
         }
         
-        // Apply filters
-        if (kategoriFilter.value && item.Kategori !== kategoriFilter.value) return false;
-        if (grupFilter.value && item.Grup !== grupFilter.value) return false;
-        if (statusFilter.value && item.Status !== statusFilter.value) return false;
-        if (platformFilter.value && item.Platform !== platformFilter.value) return false;
-        if (prioritasFilter.value && item.Prioritas !== prioritasFilter.value) return false;
+        // Filter dropdowns
+        if (kategoriVal && item.Kategori !== kategoriVal) return false;
+        if (grupVal && item.Grup !== grupVal) return false;
+        if (statusVal && item.Status !== statusVal) return false;
+        if (platformVal && item.Platform !== platformVal) return false;
+        if (prioritasVal && item.Prioritas !== prioritasVal) return false;
         
-        // Favorit view filter
+        // Filter favorit
         if (currentView === "favorit" && String(item.Favorit).toUpperCase() !== "TRUE") return false;
         
         return true;
     });
 }
 
-// Render main content based on current view
-function renderContent() {
-    let data = filterData();
-    
-    if (data.length === 0) {
-        content.innerHTML = `
-            <div class="empty-state">
-                <span>🔍</span>
-                <p>Tidak ada data yang ditemukan</p>
-            </div>
-        `;
-        return;
-    }
-    
-    if (currentView === "kategori") {
-        const map = {};
-        data.forEach(item => {
-            const key = item.Kategori || "Tidak Berkategori";
-            map[key] = (map[key] || 0) + 1;
-        });
-        
-        content.innerHTML = `
-            <div class="cards">
-                ${Object.entries(map).sort((a,b) => b[1] - a[1]).map(([k, v]) => `
-                    <div class="card" onclick="filterByKategori('${k.replace(/'/g, "\\'")}')">
-                        <h3>📂 ${k}</h3>
-                        <p>${v} item</p>
-                    </div>
-                `).join("")}
-            </div>
-        `;
-        return;
-    }
-    
-    if (currentView === "grup") {
-        const map = {};
-        data.forEach(item => {
-            const key = item.Grup || "Tidak Bergrup";
-            map[key] = (map[key] || 0) + 1;
-        });
-        
-        content.innerHTML = `
-            <div class="cards">
-                ${Object.entries(map).sort((a,b) => b[1] - a[1]).map(([k, v]) => `
-                    <div class="card" onclick="filterByGrup('${k.replace(/'/g, "\\'")}')">
-                        <h3>🗂 ${k}</h3>
-                        <p>${v} item</p>
-                    </div>
-                `).join("")}
-            </div>
-        `;
-        return;
-    }
-    
-    // Dashboard view (default)
-    content.innerHTML = `
-        <div class="cards">
-            ${data.map(item => `
-                <div class="card">
-                    <h3>${escapeHtml(item.Judul || "-")}</h3>
-                    <div class="card-meta">
-                        <span class="meta-tag">📂 ${escapeHtml(item.Kategori || "-")}</span>
-                        <span class="meta-tag">🗂 ${escapeHtml(item.Grup || "-")}</span>
-                        <span class="meta-tag">🖥 ${escapeHtml(item.Platform || "-")}</span>
-                        ${item.Status ? `<span class="meta-tag">📌 ${escapeHtml(item.Status)}</span>` : ""}
-                        ${String(item.Favorit).toUpperCase() === "TRUE" ? '<span class="meta-tag">⭐ Favorit</span>' : ""}
-                    </div>
-                    <button class="preview-btn" onclick='showModal(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
-                        👁 Preview & Copy
-                    </button>
-                </div>
-            `).join("")}
-        </div>
-    `;
-}
-
-// Escape HTML to prevent XSS
+// Escape HTML untuk security
 function escapeHtml(text) {
     if (!text) return "";
     const div = document.createElement("div");
@@ -266,58 +338,119 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Filter by kategori from card click
-function filterByKategori(kategori) {
-    kategoriFilter.value = kategori;
-    currentView = "dashboard";
-    document.querySelectorAll(".menu-btn").forEach(btn => {
-        btn.classList.remove("active");
-        if (btn.dataset.view === "dashboard") btn.classList.add("active");
-    });
-    renderContent();
+// Render konten utama
+function renderContent() {
+    if (!content) return;
+    
+    let data = filterData();
+    
+    // Tampilan kategori
+    if (currentView === "kategori") {
+        const map = {};
+        data.forEach(item => {
+            const key = item.Kategori || "Tanpa Kategori";
+            map[key] = (map[key] || 0) + 1;
+        });
+        
+        content.innerHTML = Object.entries(map)
+            .map(([k, v]) => `
+                <div class="card kategori-card">
+                    <div class="card-icon">📁</div>
+                    <div class="card-content">
+                        <h3>${escapeHtml(k)}</h3>
+                        <p>${v} Template</p>
+                    </div>
+                </div>
+            `).join("");
+        return;
+    }
+    
+    // Tampilan grup
+    if (currentView === "grup") {
+        const map = {};
+        data.forEach(item => {
+            const key = item.Grup || "Umum";
+            map[key] = (map[key] || 0) + 1;
+        });
+        
+        content.innerHTML = Object.entries(map)
+            .map(([k, v]) => `
+                <div class="card grup-card">
+                    <div class="card-icon">🗂️</div>
+                    <div class="card-content">
+                        <h3>${escapeHtml(k)}</h3>
+                        <p>${v} Item</p>
+                    </div>
+                </div>
+            `).join("");
+        return;
+    }
+    
+    // Tampilan dashboard & favorit (card view)
+    if (data.length === 0) {
+        content.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <h3>Tidak ada data ditemukan</h3>
+                <p>Coba dengan kata kunci atau filter yang berbeda</p>
+            </div>
+        `;
+        return;
+    }
+    
+    content.innerHTML = `
+        <div class="cards-grid">
+            ${data.map(item => `
+                <div class="card template-card">
+                    <div class="card-header">
+                        <h3>${escapeHtml(item.Judul || "Tanpa Judul")}</h3>
+                        ${item.Favorit === "TRUE" ? '<span class="favorit-badge">⭐ Favorit</span>' : ''}
+                    </div>
+                    <div class="card-meta">
+                        <span class="meta-tag">📁 ${escapeHtml(item.Kategori || "-")}</span>
+                        <span class="meta-tag">🗂️ ${escapeHtml(item.Grup || "-")}</span>
+                        <span class="meta-tag">📱 ${escapeHtml(item.Platform || "-")}</span>
+                        <span class="meta-tag">⚡ ${escapeHtml(item.Prioritas || "-")}</span>
+                        <span class="meta-tag status">${escapeHtml(item.Status || "-")}</span>
+                    </div>
+                    <button class="preview-btn" onclick='showModal(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+                        👁️ Preview & Copy
+                    </button>
+                </div>
+            `).join("")}
+        </div>
+    `;
 }
 
-// Filter by grup from card click
-function filterByGrup(grup) {
-    grupFilter.value = grup;
-    currentView = "dashboard";
-    document.querySelectorAll(".menu-btn").forEach(btn => {
-        btn.classList.remove("active");
-        if (btn.dataset.view === "dashboard") btn.classList.add("active");
-    });
-    renderContent();
-}
-
-// Show modal with item details
+// Show modal dengan detail item
 function showModal(item) {
-    modalTitle.textContent = item.Judul || "Detail";
+    if (!modalBody) return;
     
     let html = `
-        <div style="margin-bottom: 20px;">
-            <p><strong>📂 Kategori:</strong> ${escapeHtml(item.Kategori) || "-"}</p>
-            <p><strong>🗂 Grup:</strong> ${escapeHtml(item.Grup) || "-"}</p>
-            <p><strong>📌 Status:</strong> ${escapeHtml(item.Status) || "-"}</p>
-            <p><strong>🖥 Platform:</strong> ${escapeHtml(item.Platform) || "-"}</p>
-            <p><strong>⚠️ Prioritas:</strong> ${escapeHtml(item.Prioritas) || "-"}</p>
-            ${String(item.Favorit).toUpperCase() === "TRUE" ? '<p><strong>⭐ Favorit:</strong> Ya</p>' : ""}
+        <div class="modal-header">
+            <h2>${escapeHtml(item.Judul || "Detail Template")}</h2>
+        </div>
+        <div class="modal-info">
+            <div class="info-row"><strong>Kategori:</strong> ${escapeHtml(item.Kategori || "-")}</div>
+            <div class="info-row"><strong>Grup:</strong> ${escapeHtml(item.Grup || "-")}</div>
+            <div class="info-row"><strong>Status:</strong> ${escapeHtml(item.Status || "-")}</div>
+            <div class="info-row"><strong>Platform:</strong> ${escapeHtml(item.Platform || "-")}</div>
+            <div class="info-row"><strong>Prioritas:</strong> ${escapeHtml(item.Prioritas || "-")}</div>
+        </div>
+        <div class="modal-section">
+            <h3>📌 Pertanyaan</h3>
+            <p>${escapeHtml(item.Pertanyaan || "-")}</p>
         </div>
     `;
     
-    if (item.Pertanyaan) {
-        html += `
-            <div style="margin-bottom: 20px;">
-                <h4>❓ Pertanyaan</h4>
-                <p>${escapeHtml(item.Pertanyaan)}</p>
-            </div>
-        `;
-    }
-    
-    ["Jawaban 1", "Jawaban 2", "Jawaban 3", "Jawaban 4"].forEach(key => {
-        if (item[key]) {
+    // Jawaban
+    const jawabanKeys = ["Jawaban 1", "Jawaban 2", "Jawaban 3", "Jawaban 4"];
+    jawabanKeys.forEach(key => {
+        if (item[key] && item[key].trim()) {
             html += `
-                <div style="margin-bottom: 16px;">
-                    <h4>📝 ${key}</h4>
-                    <button class="copy-btn" onclick="copyText('${escapeHtml(item[key]).replace(/'/g, "\\'")}')">
+                <div class="modal-section answer-section">
+                    <h4>${key}</h4>
+                    <button class="copy-btn" onclick="copyText(\`${escapeHtml(item[key]).replace(/`/g, '\\`')}\`)">
                         📋 Copy
                     </button>
                     <p>${escapeHtml(item[key])}</p>
@@ -330,98 +463,97 @@ function showModal(item) {
     modal.style.display = "flex";
 }
 
-// Copy text to clipboard
-function copyText(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showToast("Berhasil disalin ke clipboard!");
-    }).catch(() => {
-        showToast("Gagal menyalin", true);
-    });
+// Copy text ke clipboard
+async function copyText(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        showToast("✓ Berhasil disalin ke clipboard", 1500);
+    } catch (err) {
+        console.error("Copy failed:", err);
+        // Fallback
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+        showToast("✓ Berhasil disalin", 1500);
+    }
 }
 
-// Close modal
-document.getElementById("closeModal").onclick = () => {
-    modal.style.display = "none";
-};
-
-window.onclick = (e) => {
-    if (e.target === modal) modal.style.display = "none";
-};
-
-// Search clear button
-searchInput.addEventListener("input", () => {
-    searchClear.style.display = searchInput.value ? "block" : "none";
-    renderContent();
-});
-
-searchClear.addEventListener("click", () => {
-    searchInput.value = "";
-    searchClear.style.display = "none";
-    renderContent();
-});
-
-// Filter change listeners
-[kategoriFilter, grupFilter, statusFilter, platformFilter, prioritasFilter].forEach(select => {
-    select.addEventListener("change", renderContent);
-});
-
-// Menu navigation
-document.querySelectorAll(".menu-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-        document.querySelectorAll(".menu-btn").forEach(x => x.classList.remove("active"));
-        btn.classList.add("active");
-        currentView = btn.dataset.view;
-        renderContent();
-    });
-});
-
-// Refresh button
-refreshBtn.addEventListener("click", () => {
-    loadData(true);
-});
-
-// Theme toggle
-function initTheme() {
-    const savedTheme = localStorage.getItem("theme") || "dark";
-    document.body.setAttribute("data-theme", savedTheme);
-    themeToggle.textContent = savedTheme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+// Show toast notification
+function showToast(message, duration = 2000) {
+    let toast = document.querySelector(".toast-notification");
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.className = "toast-notification";
+        document.body.appendChild(toast);
+    }
+    
+    toast.textContent = message;
+    toast.classList.add("show");
+    
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, duration);
 }
 
-themeToggle.addEventListener("click", () => {
-    const currentTheme = document.body.getAttribute("data-theme");
-    const newTheme = currentTheme === "dark" ? "light" : "dark";
-    document.body.setAttribute("data-theme", newTheme);
-    localStorage.setItem("theme", newTheme);
-    themeToggle.textContent = newTheme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
-});
+// Toggle theme dark/light
+function toggleTheme() {
+    const body = document.body;
+    const themeToggle = document.getElementById("themeToggle");
+    
+    if (body.classList.contains("dark-theme")) {
+        body.classList.remove("dark-theme");
+        localStorage.setItem("theme", "light");
+        if (themeToggle) themeToggle.textContent = "🌙 Dark Mode";
+    } else {
+        body.classList.add("dark-theme");
+        localStorage.setItem("theme", "dark");
+        if (themeToggle) themeToggle.textContent = "☀️ Light Mode";
+    }
+}
 
-// Mobile menu
-menuToggle.addEventListener("click", () => {
-    sidebar.classList.add("open");
-    mobileOverlay.classList.add("open");
-});
+// Toggle sidebar collapse
+function toggleSidebar() {
+    const sidebar = document.querySelector(".sidebar");
+    const main = document.querySelector(".main");
+    
+    if (sidebar && main) {
+        sidebar.classList.toggle("collapsed");
+        main.classList.toggle("expanded");
+        
+        // Save state
+        const isCollapsed = sidebar.classList.contains("collapsed");
+        localStorage.setItem("sidebarCollapsed", isCollapsed);
+    }
+}
 
-sidebarClose.addEventListener("click", () => {
-    sidebar.classList.remove("open");
-    mobileOverlay.classList.remove("open");
-});
+// Load saved preferences
+function loadPreferences() {
+    // Theme
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+        document.body.classList.add("dark-theme");
+        const themeToggle = document.getElementById("themeToggle");
+        if (themeToggle) themeToggle.textContent = "☀️ Light Mode";
+    }
+    
+    // Sidebar state
+    const sidebarCollapsed = localStorage.getItem("sidebarCollapsed") === "true";
+    if (sidebarCollapsed) {
+        const sidebar = document.querySelector(".sidebar");
+        const main = document.querySelector(".main");
+        if (sidebar && main) {
+            sidebar.classList.add("collapsed");
+            main.classList.add("expanded");
+        }
+    }
+}
 
-mobileOverlay.addEventListener("click", () => {
-    sidebar.classList.remove("open");
-    mobileOverlay.classList.remove("open");
-});
-
-// Filter collapsible
-filterToggle.addEventListener("click", () => {
-    filterSection.classList.toggle("collapsed");
-});
-
-// Make functions global for onclick
+// Export functions untuk global access
 window.showModal = showModal;
 window.copyText = copyText;
-window.filterByKategori = filterByKategori;
-window.filterByGrup = filterByGrup;
 
-// Initialize
-initTheme();
-loadData(true);
+// Load preferences saat startup
+loadPreferences();
