@@ -16,132 +16,155 @@
 
 <div class="layout">
 
-```
-<aside class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar">
 
-    <h1 class="logo">
-        📋 Online CS Pro
-    </h1>
+        <h1 class="logo">
+            📋 Online CS Pro
+        </h1>
 
-    <nav>
-
-        <button
-            class="menu-btn active"
-            data-view="dashboard">
-            📊 Dashboard
-        </button>
-
-        <button
-            class="menu-btn"
-            data-view="kategori">
-            📂 Kategori
-        </button>
-
-        <button
-            class="menu-btn"
-            data-view="grup">
-            🗂 Grup
-        </button>
-
-        <button
-            class="menu-btn"
-            data-view="favorit">
-            ⭐ Favorit
-        </button>
-
-    </nav>
-
-</aside>
-
-<main class="main">
-
-    <div class="topbar">
-
-        <div class="topbar-left">
+        <nav>
 
             <button
-                id="toggleSidebar"
-                class="icon-btn">
-                ☰
+                class="menu-btn active"
+                data-view="dashboard">
+                📊 Dashboard
             </button>
 
-            <input
-                id="searchInput"
-                type="text"
-                placeholder="Cari template..."
-            >
+            <button
+                class="menu-btn"
+                data-view="kategori">
+                📂 Kategori
+            </button>
+
+            <button
+                class="menu-btn"
+                data-view="grup">
+                🗂 Grup
+            </button>
+
+        </nav>
+
+        <div class="sidebar-filter">
+
+            <details open>
+                <summary>📂 Kategori</summary>
+
+                <select id="kategoriFilter">
+                    <option value="">
+                        Semua Kategori
+                    </option>
+                </select>
+
+            </details>
+
+            <details>
+                <summary>🗂 Grup</summary>
+
+                <select id="grupFilter">
+                    <option value="">
+                        Semua Grup
+                    </option>
+                </select>
+
+            </details>
+
+            <details>
+                <summary>📌 Status</summary>
+
+                <select id="statusFilter">
+                    <option value="">
+                        Semua Status
+                    </option>
+                </select>
+
+            </details>
+
+            <details>
+                <summary>💻 Platform</summary>
+
+                <select id="platformFilter">
+                    <option value="">
+                        Semua Platform
+                    </option>
+                </select>
+
+            </details>
+
+            <details>
+                <summary>⚡ Prioritas</summary>
+
+                <select id="prioritasFilter">
+                    <option value="">
+                        Semua Prioritas
+                    </option>
+                </select>
+
+            </details>
 
         </div>
 
-        <button
-            id="themeToggle"
-            class="icon-btn">
-            🌙
-        </button>
+    </aside>
 
-    </div>
+    <main class="main">
 
-    <section
-        id="stats"
-        class="stats">
-    </section>
+        <div class="topbar">
 
-    <section class="filters">
+            <div class="topbar-left">
 
-        <select id="kategoriFilter">
-            <option value="">
-                Semua Kategori
-            </option>
-        </select>
+                <button
+                    id="toggleSidebar"
+                    class="icon-btn">
+                    ☰
+                </button>
 
-        <select id="grupFilter">
-            <option value="">
-                Semua Grup
-            </option>
-        </select>
+                <div class="search-box">
 
-        <select id="statusFilter">
-            <option value="">
-                Semua Status
-            </option>
-        </select>
+                    <input
+                        id="searchInput"
+                        type="text"
+                        placeholder="Cari judul, kategori, grup..."
+                    >
 
-        <select id="platformFilter">
-            <option value="">
-                Semua Platform
-            </option>
-        </select>
+                    <button
+                        id="clearSearch"
+                        class="clear-btn">
+                        ✕
+                    </button>
 
-        <select id="prioritasFilter">
-            <option value="">
-                Semua Prioritas
-            </option>
-        </select>
+                </div>
 
-    </section>
+            </div>
 
-    <section id="content"></section>
+            <div class="topbar-actions">
 
-</main>
-```
+                <button
+                    id="refreshBtn"
+                    class="icon-btn">
+                    🔄
+                </button>
 
-</div>
+                <button
+                    id="themeToggle"
+                    class="icon-btn">
+                    🌙
+                </button>
 
-<div id="modal" class="modal">
+            </div>
 
-```
-<div class="modal-content">
+        </div>
 
-    <span id="closeModal">
-        &times;
-    </span>
+        <section
+            id="stats"
+            class="stats">
+        </section>
 
-    <div id="modalBody"></div>
+        <section id="content"></section>
+
+    </main>
 
 </div>
-```
 
-</div>
+<div id="toast"></div>
 
 <script>
 
@@ -151,35 +174,27 @@ document.getElementById("sidebar");
 const toggleSidebar =
 document.getElementById("toggleSidebar");
 
-if(toggleSidebar){
+toggleSidebar.addEventListener("click",()=>{
 
-    toggleSidebar.addEventListener("click",()=>{
+    sidebar.classList.toggle("collapsed");
 
-        sidebar.classList.toggle("collapsed");
-
-    });
-
-}
+});
 
 const themeToggle =
 document.getElementById("themeToggle");
 
-if(themeToggle){
+themeToggle.addEventListener("click",()=>{
 
-    themeToggle.addEventListener("click",()=>{
+    document.body.classList.toggle("light");
 
-        document.body.classList.toggle("light");
+    localStorage.setItem(
+        "theme",
+        document.body.classList.contains("light")
+        ? "light"
+        : "dark"
+    );
 
-        localStorage.setItem(
-            "theme",
-            document.body.classList.contains("light")
-            ? "light"
-            : "dark"
-        );
-
-    });
-
-}
+});
 
 if(localStorage.getItem("theme")==="light"){
 
@@ -190,6 +205,8 @@ if(localStorage.getItem("theme")==="light"){
 </script>
 
 <script src="js/App.js"></script>
+
+</body>
 
 </body>
 </html>
