@@ -4,763 +4,334 @@ const API_URL =
 let allData = [];
 let currentView = "dashboard";
 
-/* =========================
-ELEMENTS
-========================= */
+async function loadData() {
 
-const content =
-document.getElementById("content");
+    try {
 
-const modal =
-document.getElementById("modal");
+        const res = await fetch(API_URL);
+        const json = await res.json();
 
-const modalBody =
-document.getElementById("modalBody");
-
-const searchInput =
-document.getElementById("searchInput");
-
-const kategoriFilter =
-document.getElementById("kategoriFilter");
-
-const grupFilter =
-document.getElementById("grupFilter");
-
-const statusFilter =
-document.getElementById("statusFilter");
-
-const platformFilter =
-document.getElementById("platformFilter");
-
-const prioritasFilter =
-document.getElementById("prioritasFilter");
-
-/* =========================
-LOAD DATA
-========================= */
-
-async function loadData(showMessage = false){
-
-```
-try{
-
-    const res =
-    await fetch(API_URL);
-
-    const json =
-    await res.json();
-
-    allData =
-    json.data || [];
-
-    localStorage.setItem(
-        "onlinecs_cache",
-        JSON.stringify(allData)
-    );
-
-    renderStats();
-    populateFilters();
-    renderContent();
-
-    if(showMessage){
-
-        showToast(
-            "Data berhasil diperbarui"
-        );
-
-    }
-
-}catch(err){
-
-    console.error(err);
-
-    const cache =
-    localStorage.getItem(
-        "onlinecs_cache"
-    );
-
-    if(cache){
-
-        allData =
-        JSON.parse(cache);
+        allData = json.data || [];
 
         renderStats();
         populateFilters();
         renderContent();
 
-        showToast(
-            "Menggunakan cache lokal"
-        );
+    } catch(err) {
+
+        console.error(err);
 
     }
 
 }
-```
-
-}
-
-/* =========================
-UTIL
-========================= */
 
 function unique(field){
-
-```
-return [
-
-    ...new Set(
-
-        allData
-        .map(x=>x[field])
-        .filter(Boolean)
-
-    )
-
-];
-```
-
+    return [...new Set(allData.map(x=>x[field]).filter(Boolean))];
 }
-
-/* =========================
-FILTER
-========================= */
 
 function populateFilters(){
 
-```
-fillSelect(
-    "kategoriFilter",
-    "Kategori"
-);
-
-fillSelect(
-    "grupFilter",
-    "Grup"
-);
-
-fillSelect(
-    "statusFilter",
-    "Status"
-);
-
-fillSelect(
-    "platformFilter",
-    "Platform"
-);
-
-fillSelect(
-    "prioritasFilter",
-    "Prioritas"
-);
-```
+    fillSelect("kategoriFilter","Kategori");
+    fillSelect("grupFilter","Grup");
+    fillSelect("statusFilter","Status");
+    fillSelect("platformFilter","Platform");
+    fillSelect("prioritasFilter","Prioritas");
 
 }
 
 function fillSelect(id,key){
 
-```
-const select =
-document.getElementById(id);
+    const select=document.getElementById(id);
 
-if(!select) return;
+    const current=select.value;
 
-const current =
-select.value;
+    select.innerHTML=`<option value="">Semua ${key}</option>`;
 
-select.innerHTML =
-`<option value="">
-Semua ${key}
-</option>`;
+    unique(key).forEach(item=>{
 
-unique(key).forEach(item=>{
+        select.innerHTML+=`<option value="${item}">${item}</option>`;
 
-    select.innerHTML +=
-    `<option value="${item}">
-        ${item}
-    </option>`;
+    });
 
-});
+    select.value=current;
 
-select.value = current;
-```
+}
+
+function renderStats(){
+
+    const totalData=allData.length;
+
+    const totalKategori=unique("Kategori").length;
+    const totalGrup=unique("Grup").length;
+    const totalPlatform=unique("Platform").length;
+
+    const totalFavorit=
+        allData.filter(x=>String(x.Favorit).toUpperCase()==="TRUE").length;
+
+    document.getElementById("stats").innerHTML=`
+
+    <div class="stat-card">
+        <h2>${totalData}</h2>
+        <p>Total Data</p>
+    </div>
+
+    <div class="stat-card">
+        <h2>${totalKategori}</h2>
+        <p>Total Kategori</p>
+    </div>
+
+    <div class="stat-card">
+        <h2>${totalGrup}</h2>
+        <p>Total Grup</p>
+    </div>
+
+    <div class="stat-card">
+        <h2>${totalPlatform}</h2>
+        <p>Total Platform</p>
+    </div>
+
+    <div class="stat-card">
+        <h2>${totalFavorit}</h2>
+        <p>Total Favorit</p>
+    </div>
+
+    `;
 
 }
 
 function filterData(){
 
-```
-const search =
-searchInput.value
-.trim()
-.toLowerCase();
-
-return allData.filter(item=>{
-
-    const text =
-    Object.values(item)
-    .join(" ")
+    const search=document
+    .getElementById("searchInput")
+    .value
     .toLowerCase();
 
-    if(
-        search &&
-        !text.includes(search)
-    ){
-        return false;
-    }
+    return allData.filter(item=>{
 
-    if(
-        kategoriFilter.value &&
-        item.Kategori !==
-        kategoriFilter.value
-    ){
-        return false;
-    }
+        const text=Object.values(item)
+        .join(" ")
+        .toLowerCase();
 
-    if(
-        grupFilter.value &&
-        item.Grup !==
-        grupFilter.value
-    ){
-        return false;
-    }
-
-    if(
-        statusFilter.value &&
-        item.Status !==
-        statusFilter.value
-    ){
-        return false;
-    }
-
-    if(
-        platformFilter.value &&
-        item.Platform !==
-        platformFilter.value
-    ){
-        return false;
-    }
-
-    if(
-        prioritasFilter.value &&
-        item.Prioritas !==
-        prioritasFilter.value
-    ){
-        return false;
-    }
-
-    if(
-        currentView ===
-        "favorit"
-    ){
+        if(search && !text.includes(search))
+            return false;
 
         if(
-            String(
-                item.Favorit
-            ).toUpperCase()
-            !==
-            "TRUE"
-        ){
-            return false;
-        }
+            kategoriFilter.value &&
+            item.Kategori!==kategoriFilter.value
+        ) return false;
 
-    }
+        if(
+            grupFilter.value &&
+            item.Grup!==grupFilter.value
+        ) return false;
 
-    return true;
+        if(
+            statusFilter.value &&
+            item.Status!==statusFilter.value
+        ) return false;
 
-});
-```
+        if(
+            platformFilter.value &&
+            item.Platform!==platformFilter.value
+        ) return false;
 
-}
+        if(
+            prioritasFilter.value &&
+            item.Prioritas!==prioritasFilter.value
+        ) return false;
 
-/* =========================
-STATS
-========================= */
+        if(
+            currentView==="favorit" &&
+            String(item.Favorit).toUpperCase()!=="TRUE"
+        ) return false;
 
-function renderStats(){
+        return true;
 
-```
-const totalData =
-allData.length;
-
-const totalKategori =
-unique("Kategori").length;
-
-const totalGrup =
-unique("Grup").length;
-
-const totalPlatform =
-unique("Platform").length;
-
-const totalFavorit =
-
-allData.filter(
-
-    x=>
-
-    String(
-        x.Favorit
-    ).toUpperCase()
-
-    ===
-
-    "TRUE"
-
-).length;
-
-document
-.getElementById("stats")
-.innerHTML =
-
-`
-
-<div class="stat-card">
-    <h2>${totalData}</h2>
-    <p>Total Data</p>
-</div>
-
-<div class="stat-card">
-    <h2>${totalKategori}</h2>
-    <p>Kategori</p>
-</div>
-
-<div class="stat-card">
-    <h2>${totalGrup}</h2>
-    <p>Grup</p>
-</div>
-
-<div class="stat-card">
-    <h2>${totalPlatform}</h2>
-    <p>Platform</p>
-</div>
-
-<div class="stat-card">
-    <h2>${totalFavorit}</h2>
-    <p>Favorit</p>
-</div>
-
-`;
-```
+    });
 
 }
-
-/* =========================
-CONTENT
-========================= */
 
 function renderContent(){
 
-```
-let data =
-filterData();
+    let data=filterData();
 
-if(!data.length){
+    if(currentView==="kategori"){
 
-    content.innerHTML =
+        const map={};
 
-    `
-    <div class="empty-state">
-        Tidak ada data ditemukan
-    </div>
-    `;
+        data.forEach(item=>{
 
-    return;
+            map[item.Kategori]=(map[item.Kategori]||0)+1;
 
-}
+        });
 
-if(
-    currentView ===
-    "kategori"
-){
-
-    const map = {};
-
-    data.forEach(item=>{
-
-        map[item.Kategori] =
-        (map[item.Kategori]||0)+1;
-
-    });
-
-    content.innerHTML =
-
-    `<div class="cards">`
-
-    +
-
-    Object.entries(map)
-    .map(([k,v])=>
-
-    `
-    <div class="card">
-        <h3>${k}</h3>
-        <p>${v} Item</p>
-    </div>
-    `
-
-    ).join("")
-
-    +
-
-    `</div>`;
-
-    return;
-
-}
-
-if(
-    currentView ===
-    "grup"
-){
-
-    const map = {};
-
-    data.forEach(item=>{
-
-        map[item.Grup] =
-        (map[item.Grup]||0)+1;
-
-    });
-
-    content.innerHTML =
-
-    `<div class="cards">`
-
-    +
-
-    Object.entries(map)
-    .map(([k,v])=>
-
-    `
-    <div class="card">
-        <h3>${k}</h3>
-        <p>${v} Item</p>
-    </div>
-    `
-
-    ).join("")
-
-    +
-
-    `</div>`;
-
-    return;
-
-}
-
-content.innerHTML =
-
-`<div class="cards">`
-
-+
-
-data.map(item=>`
-
-<div class="card">
-
-    <h3>
-        ${item.Judul || "-"}
-    </h3>
-
-    <span class="badge">
-        ${item.Kategori || "-"}
-    </span>
-
-    <span class="badge">
-        ${item.Grup || "-"}
-    </span>
-
-    <span class="badge">
-        ${item.Platform || "-"}
-    </span>
-
-    <br><br>
-
-    <button
-        class="preview-btn"
-        onclick='showModal(${JSON.stringify(item)})'>
-        👁 Preview
-    </button>
-
-</div>
-
-`).join("")
-
-+
-
-`</div>`;
-```
-
-}
-
-/* =========================
-MODAL
-========================= */
-
-function showModal(item){
-
-```
-let html =
-
-`
-
-<h2>
-    ${item.Judul || ""}
-</h2>
-
-<p>
-    <b>Kategori:</b>
-    ${item.Kategori || "-"}
-</p>
-
-<p>
-    <b>Grup:</b>
-    ${item.Grup || "-"}
-</p>
-
-<p>
-    <b>Status:</b>
-    ${item.Status || "-"}
-</p>
-
-<p>
-    <b>Platform:</b>
-    ${item.Platform || "-"}
-</p>
-
-<p>
-    <b>Prioritas:</b>
-    ${item.Prioritas || "-"}
-</p>
-
-<hr>
-
-<h3>
-    Pertanyaan
-</h3>
-
-<p>
-    ${item["Pertanyaan"] || ""}
-</p>
-
-`;
-
-[
-
-    "Jawaban 1",
-    "Jawaban 2",
-    "Jawaban 3",
-    "Jawaban 4"
-
-]
-
-.forEach(key=>{
-
-    if(item[key]){
-
-        html +=
-
+        content.innerHTML=Object.entries(map)
+        .map(([k,v])=>
         `
+        <div class="card">
+            <h3>${k}</h3>
+            <p>${v} Item</p>
+        </div>
+        `)
+        .join("");
 
-        <hr>
-
-        <h3>
-            ${key}
-        </h3>
-
-        <button
-            class="copy-btn"
-            onclick="copyText(\`${item[key]
-            .replace(/`/g,'\\`')}\`)">
-
-            📋 Copy
-
-        </button>
-
-        <p>
-            ${item[key]}
-        </p>
-
-        `;
+        return;
 
     }
 
-});
+    if(currentView==="grup"){
 
-modalBody.innerHTML =
-html;
+        const map={};
 
-modal.style.display =
-"flex";
-```
+        data.forEach(item=>{
+
+            map[item.Grup]=(map[item.Grup]||0)+1;
+
+        });
+
+        content.innerHTML=Object.entries(map)
+        .map(([k,v])=>
+        `
+        <div class="card">
+            <h3>${k}</h3>
+            <p>${v} Item</p>
+        </div>
+        `)
+        .join("");
+
+        return;
+
+    }
+
+    content.innerHTML=
+    `<div class="cards">`+
+
+    data.map(item=>`
+
+    <div class="card">
+
+        <h3>${item.Judul || "-"}</h3>
+
+        <p>${item.Kategori || ""}</p>
+        <p>${item.Grup || ""}</p>
+
+        <p>${item.Platform || ""}</p>
+
+        <button
+            class="preview-btn"
+            onclick='showModal(${JSON.stringify(item)})'
+        >
+            👁 Preview
+        </button>
+
+    </div>
+
+    `).join("")
+
+    +`</div>`;
 
 }
 
-/* =========================
-COPY
-========================= */
+function showModal(item){
+
+    const body=document.getElementById("modalBody");
+
+    let html=`
+
+    <h2>${item.Judul || ""}</h2>
+
+    <br>
+
+    <p><b>Kategori:</b> ${item.Kategori || ""}</p>
+    <p><b>Grup:</b> ${item.Grup || ""}</p>
+    <p><b>Status:</b> ${item.Status || ""}</p>
+    <p><b>Platform:</b> ${item.Platform || ""}</p>
+    <p><b>Prioritas:</b> ${item.Prioritas || ""}</p>
+
+    <br>
+
+    <p><b>Pertanyaan:</b></p>
+    <p>${item["Pertanyaan"] || ""}</p>
+
+    <br>
+    `;
+
+    ["Jawaban 1","Jawaban 2","Jawaban 3","Jawaban 4"]
+    .forEach(key=>{
+
+        if(item[key]){
+
+            html+=`
+
+            <h4>${key}</h4>
+
+            <button
+            class="copy-btn"
+            onclick="copyText(\`${item[key]}\`)">
+            📋 Copy
+            </button>
+
+            <p>${item[key]}</p>
+
+            <br>
+
+            `;
+
+        }
+
+    });
+
+    body.innerHTML=html;
+
+    modal.style.display="flex";
+
+}
 
 function copyText(text){
 
-```
-navigator.clipboard
-.writeText(text)
-.then(()=>{
+    navigator.clipboard.writeText(text);
 
-    showToast(
-        "Berhasil disalin"
-    );
-
-});
-```
+    alert("Berhasil disalin");
 
 }
 
-/* =========================
-TOAST
-========================= */
+document
+.getElementById("closeModal")
+.onclick=()=>modal.style.display="none";
 
-function showToast(message){
+window.onclick=(e)=>{
 
-```
-const toast =
-document.getElementById(
-    "toast"
-);
+    if(e.target===modal)
+        modal.style.display="none";
 
-toast.innerText =
-message;
-
-toast.classList.add(
-    "show"
-);
-
-setTimeout(()=>{
-
-    toast.classList.remove(
-        "show"
-    );
-
-},2000);
-```
-
-}
-
-/* =========================
-EVENTS
-========================= */
+};
 
 document
 .querySelectorAll(".menu-btn")
 .forEach(btn=>{
 
-```
-btn.addEventListener(
-    "click",
-    ()=>{
+    btn.addEventListener("click",()=>{
 
         document
-        .querySelectorAll(
-            ".menu-btn"
-        )
-        .forEach(x=>
-            x.classList.remove(
-                "active"
-            )
-        );
+        .querySelectorAll(".menu-btn")
+        .forEach(x=>x.classList.remove("active"));
 
-        btn.classList.add(
-            "active"
-        );
+        btn.classList.add("active");
 
-        currentView =
-        btn.dataset.view;
+        currentView=btn.dataset.view;
 
         renderContent();
 
-    }
-);
-```
+    });
 
 });
 
 document
 .querySelectorAll("select")
-.forEach(select=>{
+.forEach(x=>x.addEventListener("change",renderContent));
 
-```
-select.addEventListener(
-    "change",
-    renderContent
-);
-```
-
-});
-
-searchInput.addEventListener(
-"input",
-renderContent
-);
-
-document
-.getElementById(
-"clearSearch"
-)
-.addEventListener(
-"click",
-()=>{
-
-```
-    searchInput.value =
-    "";
-
-    renderContent();
-
-}
-```
-
-);
-
-document
-.getElementById(
-"refreshBtn"
-)
-.addEventListener(
-"click",
-()=>{
-
-```
-    loadData(true);
-
-}
-```
-
-);
-
-document
-.getElementById(
-"closeModal"
-)
-.onclick = ()=>
-modal.style.display =
-"none";
-
-window.onclick = (e)=>{
-
-```
-if(
-    e.target === modal
-){
-
-    modal.style.display =
-    "none";
-
-}
-```
-
-};
-
-/* =========================
-INIT
-========================= */
+searchInput.addEventListener("input",renderContent);
 
 loadData();
+
+setInterval(loadData,30000);
