@@ -427,7 +427,7 @@
             const res = await fetch(API_URL);
             const json = await res.json();
             fullDataset = json.data || [];
-            if(showToast) alert("✅ Data terbaru dimuat dari spreadsheet");
+            if(showToast) alert("✅ Data terbaru dimuat dari Kosan");
             renderAll();
         } catch(err) {
             console.error(err);
