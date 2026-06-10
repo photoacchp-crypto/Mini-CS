@@ -5,6 +5,37 @@ let allData = [];
 let currentView = "dashboard";
 
 /* =========================
+ELEMENTS
+========================= */
+
+const content =
+document.getElementById("content");
+
+const modal =
+document.getElementById("modal");
+
+const modalBody =
+document.getElementById("modalBody");
+
+const searchInput =
+document.getElementById("searchInput");
+
+const kategoriFilter =
+document.getElementById("kategoriFilter");
+
+const grupFilter =
+document.getElementById("grupFilter");
+
+const statusFilter =
+document.getElementById("statusFilter");
+
+const platformFilter =
+document.getElementById("platformFilter");
+
+const prioritasFilter =
+document.getElementById("prioritasFilter");
+
+/* =========================
 LOAD DATA
 ========================= */
 
@@ -13,14 +44,17 @@ async function loadData(showMessage = false){
 ```
 try{
 
-    const res = await fetch(API_URL);
+    const res =
+    await fetch(API_URL);
 
-    const json = await res.json();
+    const json =
+    await res.json();
 
-    allData = json.data || [];
+    allData =
+    json.data || [];
 
     localStorage.setItem(
-        "online_cs_cache",
+        "onlinecs_cache",
         JSON.stringify(allData)
     );
 
@@ -29,7 +63,11 @@ try{
     renderContent();
 
     if(showMessage){
-        showToast("Data berhasil diperbarui");
+
+        showToast(
+            "Data berhasil diperbarui"
+        );
+
     }
 
 }catch(err){
@@ -38,16 +76,21 @@ try{
 
     const cache =
     localStorage.getItem(
-        "online_cs_cache"
+        "onlinecs_cache"
     );
 
     if(cache){
 
-        allData = JSON.parse(cache);
+        allData =
+        JSON.parse(cache);
 
         renderStats();
         populateFilters();
         renderContent();
+
+        showToast(
+            "Menggunakan cache lokal"
+        );
 
     }
 
@@ -64,36 +107,16 @@ function unique(field){
 
 ```
 return [
+
     ...new Set(
+
         allData
         .map(x=>x[field])
         .filter(Boolean)
+
     )
+
 ];
-```
-
-}
-
-function kategoriClass(kategori){
-
-```
-const k =
-String(kategori || "")
-.toLowerCase();
-
-if(k.includes("produk"))
-    return "kategori-produk";
-
-if(k.includes("marketing"))
-    return "kategori-marketing";
-
-if(k.includes("komplain"))
-    return "kategori-komplain";
-
-if(k.includes("follow"))
-    return "kategori-followup";
-
-return "";
 ```
 
 }
@@ -153,7 +176,7 @@ unique(key).forEach(item=>{
 
     select.innerHTML +=
     `<option value="${item}">
-    ${item}
+        ${item}
     </option>`;
 
 });
@@ -166,10 +189,8 @@ select.value = current;
 function filterData(){
 
 ```
-const keyword =
-document
-.getElementById("searchInput")
-.value
+const search =
+searchInput.value
 .trim()
 .toLowerCase();
 
@@ -181,8 +202,8 @@ return allData.filter(item=>{
     .toLowerCase();
 
     if(
-        keyword &&
-        !text.includes(keyword)
+        search &&
+        !text.includes(search)
     ){
         return false;
     }
@@ -227,6 +248,23 @@ return allData.filter(item=>{
         return false;
     }
 
+    if(
+        currentView ===
+        "favorit"
+    ){
+
+        if(
+            String(
+                item.Favorit
+            ).toUpperCase()
+            !==
+            "TRUE"
+        ){
+            return false;
+        }
+
+    }
+
     return true;
 
 });
@@ -241,30 +279,63 @@ STATS
 function renderStats(){
 
 ```
-document.getElementById(
-    "stats"
-).innerHTML =
+const totalData =
+allData.length;
+
+const totalKategori =
+unique("Kategori").length;
+
+const totalGrup =
+unique("Grup").length;
+
+const totalPlatform =
+unique("Platform").length;
+
+const totalFavorit =
+
+allData.filter(
+
+    x=>
+
+    String(
+        x.Favorit
+    ).toUpperCase()
+
+    ===
+
+    "TRUE"
+
+).length;
+
+document
+.getElementById("stats")
+.innerHTML =
 
 `
 
 <div class="stat-card">
-    <h2>${allData.length}</h2>
+    <h2>${totalData}</h2>
     <p>Total Data</p>
 </div>
 
 <div class="stat-card">
-    <h2>${unique("Kategori").length}</h2>
+    <h2>${totalKategori}</h2>
     <p>Kategori</p>
 </div>
 
 <div class="stat-card">
-    <h2>${unique("Grup").length}</h2>
+    <h2>${totalGrup}</h2>
     <p>Grup</p>
 </div>
 
 <div class="stat-card">
-    <h2>${unique("Platform").length}</h2>
+    <h2>${totalPlatform}</h2>
     <p>Platform</p>
+</div>
+
+<div class="stat-card">
+    <h2>${totalFavorit}</h2>
+    <p>Favorit</p>
 </div>
 
 `;
@@ -279,11 +350,6 @@ CONTENT
 function renderContent(){
 
 ```
-const content =
-document.getElementById(
-    "content"
-);
-
 let data =
 filterData();
 
@@ -301,17 +367,17 @@ if(!data.length){
 
 }
 
-if(currentView === "kategori"){
+if(
+    currentView ===
+    "kategori"
+){
 
     const map = {};
 
     data.forEach(item=>{
 
-        const key =
-        item.Kategori || "-";
-
-        map[key] =
-        (map[key] || 0)+1;
+        map[item.Kategori] =
+        (map[item.Kategori]||0)+1;
 
     });
 
@@ -326,22 +392,8 @@ if(currentView === "kategori"){
 
     `
     <div class="card">
-
-        <div class="card-header">
-
-            <div class="card-title">
-                ${k}
-            </div>
-
-        </div>
-
-        <div class="card-body"
-             style="display:block">
-
-            ${v} Item
-
-        </div>
-
+        <h3>${k}</h3>
+        <p>${v} Item</p>
     </div>
     `
 
@@ -355,17 +407,17 @@ if(currentView === "kategori"){
 
 }
 
-if(currentView === "grup"){
+if(
+    currentView ===
+    "grup"
+){
 
     const map = {};
 
     data.forEach(item=>{
 
-        const key =
-        item.Grup || "-";
-
-        map[key] =
-        (map[key] || 0)+1;
+        map[item.Grup] =
+        (map[item.Grup]||0)+1;
 
     });
 
@@ -380,22 +432,8 @@ if(currentView === "grup"){
 
     `
     <div class="card">
-
-        <div class="card-header">
-
-            <div class="card-title">
-                ${k}
-            </div>
-
-        </div>
-
-        <div class="card-body"
-             style="display:block">
-
-            ${v} Item
-
-        </div>
-
+        <h3>${k}</h3>
+        <p>${v} Item</p>
     </div>
     `
 
@@ -415,92 +453,37 @@ content.innerHTML =
 
 +
 
-data.map(item=>{
+data.map(item=>`
 
-    const answers =
+<div class="card">
 
-    ["Jawaban 1",
-     "Jawaban 2",
-     "Jawaban 3",
-     "Jawaban 4"]
+    <h3>
+        ${item.Judul || "-"}
+    </h3>
 
-    .filter(x=>item[x]);
+    <span class="badge">
+        ${item.Kategori || "-"}
+    </span>
 
-    return `
+    <span class="badge">
+        ${item.Grup || "-"}
+    </span>
 
-    <div class="card ${kategoriClass(item.Kategori)}">
+    <span class="badge">
+        ${item.Platform || "-"}
+    </span>
 
-        <div
-        class="card-header"
-        onclick="toggleCard(this)">
+    <br><br>
 
-            <div class="card-title">
+    <button
+        class="preview-btn"
+        onclick='showModal(${JSON.stringify(item)})'>
+        👁 Preview
+    </button>
 
-                ${item.Judul || "-"}
+</div>
 
-            </div>
-
-            <div class="card-arrow">
-                ▼
-            </div>
-
-        </div>
-
-        <div class="card-body">
-
-            <div class="badges">
-
-                <span class="badge">
-                    ${item.Kategori || "-"}
-                </span>
-
-                <span class="badge">
-                    ${item.Grup || "-"}
-                </span>
-
-                <span class="badge">
-                    ${item.Platform || "-"}
-                </span>
-
-            </div>
-
-            <p>
-                <b>Pertanyaan:</b>
-            </p>
-
-            <p>
-                ${item["Pertanyaan"] || "-"}
-            </p>
-
-            ${answers.map(key=>`
-
-            <hr>
-
-            <p>
-                <b>${key}</b>
-            </p>
-
-            <button
-            class="copy-btn"
-            onclick='copyText(${JSON.stringify(item[key])})'>
-
-            📋 Copy
-
-            </button>
-
-            <p>
-                ${item[key]}
-            </p>
-
-            `).join("")}
-
-        </div>
-
-    </div>
-
-    `;
-
-}).join("")
+`).join("")
 
 +
 
@@ -510,14 +493,104 @@ data.map(item=>{
 }
 
 /* =========================
-CARD
+MODAL
 ========================= */
 
-function toggleCard(el){
+function showModal(item){
 
 ```
-el.parentElement
-.classList.toggle("active");
+let html =
+
+`
+
+<h2>
+    ${item.Judul || ""}
+</h2>
+
+<p>
+    <b>Kategori:</b>
+    ${item.Kategori || "-"}
+</p>
+
+<p>
+    <b>Grup:</b>
+    ${item.Grup || "-"}
+</p>
+
+<p>
+    <b>Status:</b>
+    ${item.Status || "-"}
+</p>
+
+<p>
+    <b>Platform:</b>
+    ${item.Platform || "-"}
+</p>
+
+<p>
+    <b>Prioritas:</b>
+    ${item.Prioritas || "-"}
+</p>
+
+<hr>
+
+<h3>
+    Pertanyaan
+</h3>
+
+<p>
+    ${item["Pertanyaan"] || ""}
+</p>
+
+`;
+
+[
+
+    "Jawaban 1",
+    "Jawaban 2",
+    "Jawaban 3",
+    "Jawaban 4"
+
+]
+
+.forEach(key=>{
+
+    if(item[key]){
+
+        html +=
+
+        `
+
+        <hr>
+
+        <h3>
+            ${key}
+        </h3>
+
+        <button
+            class="copy-btn"
+            onclick="copyText(\`${item[key]
+            .replace(/`/g,'\\`')}\`)">
+
+            📋 Copy
+
+        </button>
+
+        <p>
+            ${item[key]}
+        </p>
+
+        `;
+
+    }
+
+});
+
+modalBody.innerHTML =
+html;
+
+modal.style.display =
+"flex";
 ```
 
 }
@@ -637,7 +710,8 @@ document
 ()=>{
 
 ```
-    searchInput.value = "";
+    searchInput.value =
+    "";
 
     renderContent();
 
@@ -661,6 +735,29 @@ document
 ```
 
 );
+
+document
+.getElementById(
+"closeModal"
+)
+.onclick = ()=>
+modal.style.display =
+"none";
+
+window.onclick = (e)=>{
+
+```
+if(
+    e.target === modal
+){
+
+    modal.style.display =
+    "none";
+
+}
+```
+
+};
 
 /* =========================
 INIT
