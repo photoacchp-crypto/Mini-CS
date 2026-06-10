@@ -1,122 +1,110 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini CS - Knowledge Base System</title>
-<link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Mini CS - Knowledge Base System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 </head>
-<body>
+<body data-theme="dark">
 
-<div class="app">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h1>📚 Mini CS</h1>
-            <button class="collapse-btn" id="collapseBtn">☰</button>
-        </div>
+    <!-- Overlay untuk mobile menu -->
+    <div class="mobile-overlay" id="mobileOverlay"></div>
 
-        <nav class="nav-menu">
-            <button class="menu-btn active" data-view="dashboard">
-                <span>📊</span> Dashboard
-            </button>
-            <button class="menu-btn" data-view="kategori">
-                <span>📂</span> Kategori
-            </button>
-            <button class="menu-btn" data-view="grup">
-                <span>🗂️</span> Grup
-            </button>
-            <button class="menu-btn" data-view="favorit">
-                <span>⭐</span> Favorit
-            </button>
-        </nav>
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1>📋 Mini CS</h1>
+                <button class="sidebar-close" id="sidebarClose">✕</button>
+            </div>
 
-        <!-- Filter Panel -->
-        <div class="filter-panel">
-            <h3>🔍 Filter Data</h3>
-            
-            <div class="filter-group">
-                <button class="filter-toggle">📁 Kategori ▼</button>
-                <div class="filter-content">
-                    <select id="kategoriFilter">
+            <nav class="nav-menu">
+                <button class="menu-btn active" data-view="dashboard">
+                    <span>📊</span> Dashboard
+                </button>
+                <button class="menu-btn" data-view="kategori">
+                    <span>📂</span> Kategori
+                </button>
+                <button class="menu-btn" data-view="grup">
+                    <span>🗂</span> Grup
+                </button>
+                <button class="menu-btn" data-view="favorit">
+                    <span>⭐</span> Favorit
+                </button>
+            </nav>
+
+            <!-- Filter Section Collapsible -->
+            <div class="filter-section">
+                <div class="filter-header" id="filterToggle">
+                    <span>🔍 Filter</span>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="filter-body" id="filterBody">
+                    <select id="kategoriFilter" class="filter-select">
                         <option value="">Semua Kategori</option>
                     </select>
-                </div>
-            </div>
-
-            <div class="filter-group">
-                <button class="filter-toggle">🗂️ Grup ▼</button>
-                <div class="filter-content">
-                    <select id="grupFilter">
+                    <select id="grupFilter" class="filter-select">
                         <option value="">Semua Grup</option>
                     </select>
-                </div>
-            </div>
-
-            <div class="filter-group">
-                <button class="filter-toggle">📌 Status ▼</button>
-                <div class="filter-content">
-                    <select id="statusFilter">
+                    <select id="statusFilter" class="filter-select">
                         <option value="">Semua Status</option>
                     </select>
-                </div>
-            </div>
-
-            <div class="filter-group">
-                <button class="filter-toggle">💻 Platform ▼</button>
-                <div class="filter-content">
-                    <select id="platformFilter">
+                    <select id="platformFilter" class="filter-select">
                         <option value="">Semua Platform</option>
                     </select>
-                </div>
-            </div>
-
-            <div class="filter-group">
-                <button class="filter-toggle">⚡ Prioritas ▼</button>
-                <div class="filter-content">
-                    <select id="prioritasFilter">
+                    <select id="prioritasFilter" class="filter-select">
                         <option value="">Semua Prioritas</option>
                     </select>
                 </div>
             </div>
-        </div>
 
-        <div class="sidebar-footer">
-            <button class="refresh-btn" id="refreshBtn">🔄 Refresh Data</button>
-        </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="main">
-        <div class="topbar">
-            <div class="search-container">
-                <span class="search-icon">🔍</span>
-                <input 
-                    id="searchInput" 
-                    type="text" 
-                    placeholder="Cari berdasarkan judul, kategori, grup, pertanyaan, jawaban..."
-                >
-                <button class="clear-search" id="clearSearch">✕</button>
+            <div class="sidebar-footer">
+                <button class="theme-toggle" id="themeToggle">🌙 Dark Mode</button>
+                <button class="refresh-btn" id="refreshBtn">🔄 Refresh Data</button>
             </div>
-            <button class="theme-toggle" id="themeToggle">🌙</button>
-        </div>
+        </aside>
 
-        <div class="stats-container">
+        <!-- Main Content -->
+        <main class="main">
+            <div class="topbar">
+                <button class="menu-toggle" id="menuToggle">☰</button>
+                <div class="search-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="Cari template, pertanyaan, jawaban..." class="search-input">
+                    <button class="search-clear" id="searchClear" style="display: none;">✕</button>
+                </div>
+                <div class="last-update" id="lastUpdate"></div>
+            </div>
+
+            <!-- Stats Cards -->
             <section id="stats" class="stats"></section>
-        </div>
 
-        <section id="content" class="content-area"></section>
-    </main>
-</div>
+            <!-- Content Area -->
+            <section id="content" class="content-area"></section>
 
-<!-- Modal -->
-<div id="modal" class="modal">
-    <div class="modal-content">
-        <span id="closeModal">&times;</span>
-        <div id="modalBody"></div>
+            <!-- Loading Indicator -->
+            <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+                <div class="spinner"></div>
+            </div>
+        </main>
     </div>
-</div>
 
-<script src="js/App.js"></script>
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle"></h2>
+                <span id="closeModal" class="modal-close">&times;</span>
+            </div>
+            <div id="modalBody" class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Berhasil disalin!</div>
+
+    <script src="js/App.js"></script>
 </body>
 </html>
