@@ -1,10 +1,11 @@
+Saya akan membuatkan versi yang lebih profesional dengan sidebar yang menampilkan menu header dari database secara otomatis, collapsible, dan filter yang terintegrasi dengan baik.
+```html
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Mini CS - Knowledge Base</title>
-    <!-- Google Fonts & Icon Library -->
+    <title>Mini CS Pro · Knowledge Base</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -16,690 +17,713 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            transition: background-color 0.3s ease, color 0.2s ease;
+            transition: background 0.2s ease, color 0.2s;
         }
 
-        /* Light / Dark Theme Variables */
-        body.light {
-            --bg-page: #f1f5f9;
-            --bg-sidebar: #ffffff;
-            --sidebar-border: #e2e8f0;
-            --text-primary: #0f172a;
-            --text-secondary: #334155;
-            --card-bg: #ffffff;
-            --card-border: #e2e8f0;
-            --input-bg: #f8fafc;
-            --input-border: #cbd5e1;
-            --btn-hover: #e2e8f0;
-            --stat-bg: #ffffff;
-            --stat-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            --modal-bg: #ffffff;
-            --badge-light: #eef2ff;
-        }
-
+        /* THEMES */
         body.dark {
-            --bg-page: #0b1120;
-            --bg-sidebar: #111827;
-            --sidebar-border: #1f2937;
-            --text-primary: #f1f5f9;
-            --text-secondary: #cbd5e1;
+            --bg-page: #0a0f1c;
+            --bg-sidebar: #0f172ad9;
+            --sidebar-solid: #0f172a;
             --card-bg: #111827;
-            --card-border: #1f2937;
+            --card-border: #1f2a3e;
+            --text-primary: #f0f3fa;
+            --text-secondary: #9ca3af;
             --input-bg: #1e293b;
             --input-border: #334155;
-            --btn-hover: #1f2937;
-            --stat-bg: #111827;
-            --stat-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --hover-bg: #1e2a3a;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --stat-bg: #111827cc;
             --modal-bg: #1e293b;
-            --badge-light: #1e293b;
+            --badge: #1e293b;
+            --shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        body.light {
+            --bg-page: #f1f5f9;
+            --bg-sidebar: #ffffffea;
+            --sidebar-solid: #ffffff;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+            --hover-bg: #f1f5f9;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --stat-bg: #ffffff;
+            --modal-bg: #ffffff;
+            --badge: #eef2ff;
+            --shadow: 0 8px 20px rgba(0,0,0,0.08);
         }
 
         body {
-            background-color: var(--bg-page);
+            background: var(--bg-page);
             color: var(--text-primary);
         }
 
-        /* Layout */
-        .app-layout {
+        /* LAYOUT */
+        .app {
             display: flex;
             min-height: 100vh;
+            position: relative;
         }
 
-        /* Sidebar */
-        .sidebar {
-            width: 280px;
+        /* SIDEBAR PREMIUM */
+        .sidebar-premium {
+            width: 300px;
             background: var(--bg-sidebar);
-            border-right: 1px solid var(--sidebar-border);
-            transition: transform 0.3s ease, width 0.2s;
+            backdrop-filter: blur(12px);
+            background: var(--sidebar-solid);
+            border-right: 1px solid var(--card-border);
             position: fixed;
             top: 0;
             left: 0;
             bottom: 0;
-            z-index: 100;
+            z-index: 200;
+            transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
             overflow-y: auto;
-            padding: 1.5rem;
             display: flex;
             flex-direction: column;
+            box-shadow: var(--shadow);
         }
 
-        .sidebar.collapsed {
+        .sidebar-premium.collapsed {
             transform: translateX(-100%);
         }
 
-        /* Main content */
-        .main-content {
+        /* SCROLLBAR */
+        .sidebar-premium::-webkit-scrollbar { width: 4px; }
+        .sidebar-premium::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-premium::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+
+        .main-area {
             flex: 1;
-            margin-left: 280px;
-            transition: margin-left 0.3s ease;
-            padding: 1.5rem 2rem;
+            margin-left: 300px;
+            transition: margin-left 0.3s;
+            padding: 1.8rem 2rem;
         }
 
-        .main-content.expanded {
+        .main-area.expanded {
             margin-left: 0;
         }
 
-        /* Header / Topbar */
-        .top-header {
+        /* HEADER SIDEBAR */
+        .logo-area {
+            padding: 1.5rem 1.2rem 1rem;
+            border-bottom: 1px solid var(--card-border);
+            margin-bottom: 1rem;
+        }
+        .logo-area h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* MENU HEADER (DYNAMIC FROM DB) */
+        .nav-group {
+            margin: 0.5rem 0.8rem;
+        }
+        .nav-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 1.8rem;
-        }
-
-        .menu-toggle {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 0.6rem 1rem;
-            font-size: 1.2rem;
+            padding: 0.9rem 1rem;
+            background: var(--hover-bg);
+            border-radius: 16px;
             cursor: pointer;
-            color: var(--text-primary);
-            transition: 0.2s;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-bottom: 6px;
         }
-
-        .theme-toggle {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
+        .nav-header:hover {
+            background: var(--accent);
+            color: white;
+        }
+        .nav-header i:first-child { margin-right: 10px; width: 24px; }
+        .nav-header span { flex: 1; font-size: 0.95rem; letter-spacing: -0.2px; }
+        .badge-count {
+            background: var(--accent);
+            color: white;
             border-radius: 40px;
-            padding: 0.5rem 1rem;
-            cursor: pointer;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .nav-children {
+            margin-left: 1rem;
+            margin-top: 0.3rem;
+            margin-bottom: 0.8rem;
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .nav-children.open {
             display: flex;
+        }
+        .child-item {
+            padding: 0.6rem 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.15s;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
+            background: var(--card-bg);
+            border: 1px solid transparent;
+        }
+        .child-item:hover {
+            border-color: var(--accent);
+            background: var(--hover-bg);
+            transform: translateX(4px);
+        }
+        .child-title {
             font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 170px;
+        }
+        .preview-badge {
+            font-size: 0.7rem;
+            background: var(--badge);
+            padding: 2px 8px;
+            border-radius: 20px;
+            cursor: pointer;
         }
 
-        /* Search bar */
-        .search-wrapper {
+        /* filter stats */
+        .top-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .search-group {
+            flex: 2;
+            min-width: 240px;
             position: relative;
-            flex: 1;
-            max-width: 500px;
         }
-
-        .search-wrapper input {
+        .search-group input {
             width: 100%;
-            padding: 12px 40px 12px 16px;
+            padding: 12px 40px 12px 18px;
             background: var(--input-bg);
             border: 1px solid var(--input-border);
             border-radius: 40px;
             color: var(--text-primary);
             font-size: 0.9rem;
         }
-
-        .search-clear {
+        .clear-icon {
             position: absolute;
-            right: 12px;
+            right: 16px;
             top: 50%;
             transform: translateY(-50%);
             cursor: pointer;
             color: var(--text-secondary);
-            font-size: 1.1rem;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .icon-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 10px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.2s;
         }
 
-        /* Stats Grid */
-        .stats-grid {
+        /* STATS CARDS */
+        .stats-master {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 1rem;
             margin-bottom: 2rem;
         }
-
-        .stat-tile {
+        .stat-card {
             background: var(--stat-bg);
-            border-radius: 20px;
-            padding: 1rem 1rem;
+            backdrop-filter: blur(4px);
+            border-radius: 24px;
+            padding: 1.2rem;
             border: 1px solid var(--card-border);
-            text-align: center;
-            transition: transform 0.1s ease;
+            transition: 0.2s;
             cursor: pointer;
         }
-        .stat-tile:hover { transform: translateY(-2px); background: var(--btn-hover);}
-        .stat-number { font-size: 2rem; font-weight: 700; }
-        .stat-label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
-
-        /* Filter panels in sidebar (collapsible) */
-        .filter-section {
-            margin-top: 1.5rem;
-            border-top: 1px solid var(--sidebar-border);
-            padding-top: 1rem;
-        }
-        .filter-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            padding: 0.6rem 0;
-            font-weight: 600;
-        }
-        .filter-options {
-            margin-top: 0.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        .filter-chip {
-            background: var(--input-bg);
-            padding: 6px 12px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: 0.1s;
-            text-align: left;
-            border: 1px solid transparent;
-        }
-        .filter-chip.active-filter {
-            background: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
-        }
-        .filter-chip:hover:not(.active-filter) { background: var(--btn-hover); }
-
-        /* Category / Group menu interaktif (collapsible dengan list pertanyaan) */
-        .nav-category-group {
-            margin-top: 1.5rem;
-        }
-        .collapsible-menu {
-            margin-bottom: 0.8rem;
-        }
-        .menu-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--input-bg);
-            padding: 10px 12px;
-            border-radius: 14px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .sub-items {
-            margin-left: 1rem;
-            margin-top: 0.5rem;
-            display: none;
-            flex-direction: column;
-            gap: 0.7rem;
-        }
-        .sub-items.open {
-            display: flex;
-        }
-        .sub-question {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 10px;
-            border-left: 3px solid #3b82f6;
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-        .preview-jawaban {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .small-copy {
-            background: none;
-            border: none;
-            color: #3b82f6;
-            cursor: pointer;
-            font-size: 0.7rem;
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
         }
 
-        /* Cards grid */
-        .cards-grid {
+        /* CARDS GRID */
+        .data-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1.2rem;
-            margin-top: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.3rem;
         }
-        .data-card {
+        .card-item {
             background: var(--card-bg);
+            border-radius: 24px;
+            padding: 1.2rem;
             border: 1px solid var(--card-border);
-            border-radius: 20px;
-            padding: 1rem;
             transition: all 0.2s;
         }
-        .data-card h3 {
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0;
         }
-        .badge-info {
-            display: inline-block;
-            background: var(--badge-light);
-            padding: 2px 8px;
+        .badge-sm {
+            background: var(--badge);
+            padding: 4px 12px;
             border-radius: 30px;
             font-size: 0.7rem;
-            margin: 4px 4px 0 0;
         }
-        .preview-button {
-            margin-top: 12px;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            padding: 8px;
-            border-radius: 40px;
+        .btn-preview {
             width: 100%;
-            font-weight: 500;
+            margin-top: 16px;
+            background: var(--accent);
+            border: none;
+            padding: 10px;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
             cursor: pointer;
         }
 
-        /* Modal */
-        .modal-overlay {
+        /* MODAL */
+        .modal-glass {
             display: none;
             position: fixed;
             inset: 0;
             background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
-            padding: 1rem;
         }
-        .modal-container {
+        .modal-card {
             background: var(--modal-bg);
-            max-width: 700px;
-            width: 100%;
+            width: 90%;
+            max-width: 680px;
             max-height: 85vh;
             overflow-y: auto;
-            border-radius: 28px;
+            border-radius: 32px;
             padding: 1.8rem;
             position: relative;
         }
-        .modal-close {
-            float: right;
-            font-size: 28px;
-            cursor: pointer;
-        }
-        .answer-block {
-            margin: 1rem 0;
-            border-top: 1px solid var(--card-border);
-            padding-top: 1rem;
-        }
-        .copy-answer-btn {
-            background: #3b82f6;
+        .copy-answer {
+            background: var(--accent);
             border: none;
             padding: 6px 12px;
             border-radius: 30px;
             color: white;
-            margin-top: 5px;
+            margin-top: 8px;
             cursor: pointer;
         }
-
-        @media (max-width: 768px) {
-            .sidebar { width: 260px; }
-            .main-content { margin-left: 0; padding: 1rem; }
-            .main-content.expanded { margin-left: 0; }
-            .stats-grid { grid-template-columns: repeat(2,1fr); }
+        @media (max-width: 780px) {
+            .main-area { padding: 1rem; }
+            .sidebar-premium { width: 280px; }
         }
-
-        button, .filter-chip, .stat-tile, .preview-button, .menu-toggle, .theme-toggle { transition: all 0.2s; }
-        .fa, .fas, .far { margin-right: 6px; }
-        .refresh-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 40px;
-            padding: 0.5rem 1rem;
-            cursor: pointer;
+        .refresh-spinner {
+            animation: spin 0.8s linear infinite;
         }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .favorite-star { color: #fbbf24; }
     </style>
 </head>
 <body class="dark">
-<div class="app-layout">
-    <aside class="sidebar" id="sidebar">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-            <h2 style="font-size: 1.6rem;"><i class="fas fa-database"></i> Mini CS</h2>
-            <i class="fas fa-times-circle" id="closeSidebarMobile" style="display: none; cursor: pointer;"></i>
+<div class="app">
+    <!-- SIDEBAR PREMIUM dengan Menu Header dari database (collapsible + filter otomatis) -->
+    <aside class="sidebar-premium" id="premiumSidebar">
+        <div class="logo-area">
+            <h2><i class="fas fa-brain"></i> Mini CS</h2>
+            <p style="font-size: 0.7rem; margin-top: 5px;">knowledge base · pintar</p>
         </div>
 
-        <!-- Filter collapsible section (Sidebar Filters) -->
-        <div class="filter-section">
-            <div class="filter-header" data-filter-group="kategoriFilterSide">
-                <span><i class="fas fa-tags"></i> Kategori ▼</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="filter-options" id="kategoriFilterSideContainer"></div>
-        </div>
-        <div class="filter-section">
-            <div class="filter-header" data-filter-group="grupFilterSide">
-                <span><i class="fas fa-folder"></i> Grup ▼</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="filter-options" id="grupFilterSideContainer"></div>
-        </div>
-        <div class="filter-section">
-            <div class="filter-header" data-filter-group="statusFilterSide">
-                <span><i class="fas fa-flag-checkered"></i> Status ▼</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="filter-options" id="statusFilterSideContainer"></div>
-        </div>
-        <div class="filter-section">
-            <div class="filter-header" data-filter-group="platformFilterSide">
-                <span><i class="fab fa-chrome"></i> Platform ▼</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="filter-options" id="platformFilterSideContainer"></div>
-        </div>
-        <div class="filter-section">
-            <div class="filter-header" data-filter-group="prioritasFilterSide">
-                <span><i class="fas fa-exclamation-triangle"></i> Prioritas ▼</span>
-                <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="filter-options" id="prioritasFilterSideContainer"></div>
+        <!-- MENU DINAMIS: Header dari field database (Kategori, Grup, Platform, Prioritas, Status) muncul otomatis -->
+        <div id="dynamicMenuContainer" style="flex:1; padding: 0 0.6rem;">
+            <!-- akan diisi javascript: menu header seperti Kategori, Grup, Platform, Status, Prioritas dll -->
         </div>
 
-        <!-- Menu Kategori Interaktif (collapsible dengan isi pertanyaan) -->
-        <div class="nav-category-group">
-            <div class="menu-header" id="toggleCategoryList">
-                <span><i class="fas fa-layer-group"></i> 📂 Kategori Interaktif</span> <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="sub-items" id="categoryDynamicList"></div>
+        <div style="padding: 1rem; border-top: 1px solid var(--card-border); margin-top: auto; font-size: 0.7rem; text-align: center;">
+            <i class="fas fa-cloud-sync-alt"></i> realtime sync
         </div>
-
-        <div class="nav-category-group">
-            <div class="menu-header" id="toggleGroupList">
-                <span><i class="fas fa-object-group"></i> 🗂️ Grup Interaktif</span> <i class="fas fa-chevron-down"></i>
-            </div>
-            <div class="sub-items" id="groupDynamicList"></div>
-        </div>
-        <div style="margin-top: auto; padding-top: 1rem; font-size: 0.7rem; text-align: center;">Auto-sync setiap 30s</div>
     </aside>
 
-    <main class="main-content" id="mainContent">
-        <div class="top-header">
-            <button class="menu-toggle" id="menuToggleBtn"><i class="fas fa-bars"></i> Menu</button>
-            <div class="search-wrapper">
-                <input type="text" id="globalSearch" placeholder="Cari semua field (judul, kategori, jawaban...)">
-                <span class="search-clear" id="clearSearchBtn"><i class="fas fa-times-circle"></i></span>
+    <main class="main-area" id="mainArea">
+        <div class="top-bar">
+            <button class="icon-btn" id="toggleSidebarBtn"><i class="fas fa-bars"></i> Menu</button>
+            <div class="search-group">
+                <input type="text" id="globalSearchField" placeholder="Cari seluruh field (judul, jawaban, pertanyaan, kategori...)" autocomplete="off">
+                <span id="clearSearchBtn" class="clear-icon"><i class="fas fa-times-circle"></i></span>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="refresh-btn" id="manualRefreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
-                <button class="theme-toggle" id="themeToggleBtn"><i class="fas fa-moon"></i> <span>Mode</span></button>
+            <div class="action-buttons">
+                <button class="icon-btn" id="refreshDataBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+                <button class="icon-btn" id="themeModeBtn"><i class="fas fa-moon"></i> Dark</button>
             </div>
         </div>
 
-        <div class="stats-grid" id="statsDashboard"></div>
+        <!-- STATISTICS DASHBOARD interaktif -->
+        <div class="stats-master" id="statsContainer"></div>
 
-        <!-- Konten Dinamis: Dashboard / Tampilan data -->
-        <div id="dynamicContent"></div>
+        <!-- KONTEN UTAMA (dashboard data) -->
+        <div id="mainContentArea"></div>
     </main>
 </div>
 
-<div id="modalPreview" class="modal-overlay">
-    <div class="modal-container">
-        <span class="modal-close" id="closeModalBtn">&times;</span>
-        <div id="modalInner"></div>
+<!-- MODAL PREMIUM -->
+<div id="globalModal" class="modal-glass">
+    <div class="modal-card">
+        <span id="closeModalBtn" style="float: right; font-size: 28px; cursor: pointer;">&times;</span>
+        <div id="modalBodyContent"></div>
     </div>
 </div>
 
 <script>
+    // ---------- KONFIGURASI ----------
     const API_URL = "https://script.google.com/macros/s/AKfycbyrznbrQDzNXiPc0fJ0fXxClPGtGktm2iTMZbzhin-o6ZenmlZfIbUp4RoCuzTPp5zH/exec";
-    let allData = [];
-    let currentFilters = {
-        kategori: "", grup: "", status: "", platform: "", prioritas: ""
+    let fullDataset = [];
+    let activeFilters = {
+        kategori: "",
+        grup: "",
+        platform: "",
+        status: "",
+        prioritas: ""
     };
-    let searchTerm = "";
-    let activeView = "dashboard"; // dashboard, favorit
+    let searchKeyword = "";
+    let currentView = "dashboard"; // "dashboard" atau bisa "favorit"
 
     // DOM elements
-    const contentDiv = document.getElementById("dynamicContent");
-    const statsDiv = document.getElementById("statsDashboard");
-    const searchInput = document.getElementById("globalSearch");
-    const clearSearch = document.getElementById("clearSearchBtn");
+    const dynamicMenu = document.getElementById("dynamicMenuContainer");
+    const mainContent = document.getElementById("mainContentArea");
+    const statsDiv = document.getElementById("statsContainer");
+    const searchInput = document.getElementById("globalSearchField");
+    const clearSearchIcon = document.getElementById("clearSearchBtn");
+    const refreshBtn = document.getElementById("refreshDataBtn");
+    const themeBtn = document.getElementById("themeModeBtn");
+    const toggleSidebar = document.getElementById("toggleSidebarBtn");
+    const sidebar = document.getElementById("premiumSidebar");
+    const mainArea = document.getElementById("mainArea");
+    const modal = document.getElementById("globalModal");
+    const modalBody = document.getElementById("modalBodyContent");
+    const closeModalSpan = document.getElementById("closeModalBtn");
 
-    // Helper load data
-    async function loadData(showToast = false) {
+    // helper unik
+    const getUnique = (field) => [...new Set(fullDataset.map(item => item[field]).filter(v => v && v.trim() !== ""))].sort();
+    
+    // load data dari spreadsheet
+    async function fetchData(showToast = false) {
         try {
             const res = await fetch(API_URL);
             const json = await res.json();
-            allData = json.data || [];
-            renderStats();
-            populateSideFilters();
-            buildInteractiveCategoryGroup();
-            buildInteractiveGroupGroup();
-            renderContent();
-            if(showToast) alert("✅ Data terbaru dimuat!");
-        } catch(e) { console.error(e); if(showToast) alert("Gagal refresh"); }
-    }
-
-    function getUniqueValues(field) {
-        return [...new Set(allData.map(item => item[field]).filter(v => v && v.trim() !== ""))].sort();
-    }
-
-    function populateSideFilters() {
-        const kategoriList = getUniqueValues("Kategori");
-        const grupList = getUniqueValues("Grup");
-        const statusList = getUniqueValues("Status");
-        const platformList = getUniqueValues("Platform");
-        const prioritasList = getUniqueValues("Prioritas");
-
-        renderFilterOptions("kategoriFilterSideContainer", kategoriList, "kategori");
-        renderFilterOptions("grupFilterSideContainer", grupList, "grup");
-        renderFilterOptions("statusFilterSideContainer", statusList, "status");
-        renderFilterOptions("platformFilterSideContainer", platformList, "platform");
-        renderFilterOptions("prioritasFilterSideContainer", prioritasList, "prioritas");
-    }
-
-    function renderFilterOptions(containerId, items, filterKey) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        container.innerHTML = items.map(val => `<div class="filter-chip ${currentFilters[filterKey] === val ? 'active-filter' : ''}" data-filter="${filterKey}" data-value="${val.replace(/"/g, '&quot;')}">${val}</div>`).join("");
-        container.querySelectorAll(".filter-chip").forEach(chip => {
-            chip.addEventListener("click", (e) => {
-                const key = chip.dataset.filter;
-                const val = chip.dataset.value;
-                if (currentFilters[key] === val) currentFilters[key] = "";
-                else currentFilters[key] = val;
-                populateSideFilters(); // re-render highlight
-                renderContent();
-            });
-        });
-    }
-
-    function applySearchAndFilters(data) {
-        let filtered = [...data];
-        if (searchTerm.trim() !== "") {
-            const term = searchTerm.toLowerCase();
-            filtered = filtered.filter(item => {
-                return Object.values(item).some(val => val && String(val).toLowerCase().includes(term));
-            });
+            fullDataset = json.data || [];
+            if(showToast) alert("✅ Data terbaru dimuat dari spreadsheet");
+            renderAll();
+        } catch(err) {
+            console.error(err);
+            if(showToast) alert("Gagal memuat data, cek koneksi");
         }
-        if (currentFilters.kategori) filtered = filtered.filter(i => i.Kategori === currentFilters.kategori);
-        if (currentFilters.grup) filtered = filtered.filter(i => i.Grup === currentFilters.grup);
-        if (currentFilters.status) filtered = filtered.filter(i => i.Status === currentFilters.status);
-        if (currentFilters.platform) filtered = filtered.filter(i => i.Platform === currentFilters.platform);
-        if (currentFilters.prioritas) filtered = filtered.filter(i => i.Prioritas === currentFilters.prioritas);
-        if (activeView === "favorit") filtered = filtered.filter(i => String(i.Favorit).toUpperCase() === "TRUE");
-        return filtered;
     }
 
-    function renderStats() {
-        const total = allData.length;
-        const totalKategori = getUniqueValues("Kategori").length;
-        const totalGrup = getUniqueValues("Grup").length;
-        const totalPlatform = getUniqueValues("Platform").length;
-        const totalFavorit = allData.filter(x => String(x.Favorit).toUpperCase() === "TRUE").length;
+    // Fungsi utama render semua: stat, menu sidebar (dengan header dari database), dan konten
+    function renderAll() {
+        renderStatsDashboard();
+        buildDynamicSidebarMenus();  // <-- menu header dari database (collapsible + auto filter)
+        renderContentCards();
+    }
+
+    // STATS lengkap & interaktif
+    function renderStatsDashboard() {
+        const total = fullDataset.length;
+        const totalKategori = getUnique("Kategori").length;
+        const totalGrup = getUnique("Grup").length;
+        const totalPlatform = getUnique("Platform").length;
+        const favoritCount = fullDataset.filter(i => String(i.Favorit).toUpperCase() === "TRUE").length;
         statsDiv.innerHTML = `
-            <div class="stat-tile" data-stat="all"><div class="stat-number">${total}</div><div class="stat-label">📊 Total Data</div></div>
-            <div class="stat-tile" data-stat="kategori"><div class="stat-number">${totalKategori}</div><div class="stat-label">📂 Kategori</div></div>
-            <div class="stat-tile" data-stat="grup"><div class="stat-number">${totalGrup}</div><div class="stat-label">🗂️ Grup</div></div>
-            <div class="stat-tile" data-stat="platform"><div class="stat-number">${totalPlatform}</div><div class="stat-label">📱 Platform</div></div>
-            <div class="stat-tile" data-stat="favorit"><div class="stat-number">${totalFavorit}</div><div class="stat-label">⭐ Favorit</div></div>
+            <div class="stat-card" data-stat-type="all"><div class="stat-number">${total}</div><div>📊 Total Data</div></div>
+            <div class="stat-card" data-stat-type="kategori"><div class="stat-number">${totalKategori}</div><div>📂 Kategori</div></div>
+            <div class="stat-card" data-stat-type="grup"><div class="stat-number">${totalGrup}</div><div>🗂️ Grup</div></div>
+            <div class="stat-card" data-stat-type="platform"><div class="stat-number">${totalPlatform}</div><div>📱 Platform</div></div>
+            <div class="stat-card" data-stat-type="favorit"><div class="stat-number">${favoritCount}</div><div>⭐ Favorit</div></div>
         `;
-        document.querySelectorAll(".stat-tile").forEach(tile => {
-            tile.addEventListener("click", (e) => {
-                const type = tile.dataset.stat;
-                if (type === "favorit") { activeView = "favorit"; renderContent(); }
-                else if (type === "all") { activeView = "dashboard"; renderContent(); }
-                else if (type === "kategori") { activeView = "dashboard"; currentFilters = { kategori:"", grup:"", status:"", platform:"", prioritas:"" }; searchTerm=""; searchInput.value=""; populateSideFilters(); renderContent(); alert("Menampilkan semua data, filter direset"); }
-                else if (type === "grup") { activeView = "dashboard"; currentFilters = { kategori:"", grup:"", status:"", platform:"", prioritas:"" }; searchTerm=""; searchInput.value=""; populateSideFilters(); renderContent(); }
-                else if (type === "platform") { activeView = "dashboard"; currentFilters = { kategori:"", grup:"", status:"", platform:"", prioritas:"" }; searchTerm=""; searchInput.value=""; populateSideFilters(); renderContent(); }
-                else { activeView = "dashboard"; renderContent(); }
+        // klik stat: filter interaktif
+        document.querySelectorAll(".stat-card").forEach(card => {
+            card.addEventListener("click", (e) => {
+                const type = card.dataset.statType;
+                if(type === "favorit") {
+                    currentView = "favorit";
+                    renderContentCards();
+                } else if(type === "all") {
+                    currentView = "dashboard";
+                    resetAllFilters();
+                    renderContentCards();
+                } else if(type === "kategori") {
+                    currentView = "dashboard";
+                    resetAllFilters();
+                    renderContentCards();
+                } else if(type === "grup") {
+                    currentView = "dashboard";
+                    resetAllFilters();
+                    renderContentCards();
+                } else {
+                    currentView = "dashboard";
+                    resetAllFilters();
+                    renderContentCards();
+                }
             });
         });
     }
 
-    function renderContent() {
-        let filtered = applySearchAndFilters(allData);
-        if (filtered.length === 0) { contentDiv.innerHTML = `<div style="text-align:center;padding:3rem;">⚠️ Tidak ada data sesuai filter</div>`; return; }
-        if (activeView === "dashboard") {
-            contentDiv.innerHTML = `<div class="cards-grid">${filtered.map(item => `
-                <div class="data-card">
-                    <h3><i class="fas fa-comment-dots"></i> ${escapeHtml(item.Judul || "Tanpa Judul")}</h3>
-                    <div><span class="badge-info"><i class="fas fa-tag"></i> ${item.Kategori || "-"}</span> <span class="badge-info"><i class="fas fa-users"></i> ${item.Grup || "-"}</span> <span class="badge-info"><i class="fas fa-chart-simple"></i> ${item.Prioritas || "-"}</span></div>
-                    <p style="margin-top:8px; font-size:0.85rem;">${(item.Pertanyaan || "").substring(0, 80)}${(item.Pertanyaan||"").length>80?"...":""}</p>
-                    <button class="preview-button" data-id='${JSON.stringify(escapeJson(item))}'><i class="fas fa-eye"></i> Preview & Salin</button>
-                </div>
-            `).join("")}</div>`;
-            document.querySelectorAll(".preview-button").forEach(btn => {
-                btn.addEventListener("click", (e) => {
-                    const raw = btn.dataset.id;
-                    showModal(JSON.parse(raw));
-                });
-            });
-        } else if (activeView === "favorit") {
-            contentDiv.innerHTML = `<h3 style="margin-bottom:1rem"><i class="fas fa-star"></i> Favorit (${filtered.length})</h3><div class="cards-grid">${filtered.map(item => `
-                <div class="data-card"><h3>${escapeHtml(item.Judul)}</h3><p>${escapeHtml(item.Pertanyaan || "")}</p><button class="preview-button" data-id='${JSON.stringify(escapeJson(item))}'>Preview</button></div>
-            `).join("")}</div>`;
-            document.querySelectorAll(".preview-button").forEach(btn => btn.addEventListener("click", (e) => showModal(JSON.parse(btn.dataset.id))));
-        }
+    // reset filter & search
+    function resetAllFilters() {
+        activeFilters = { kategori: "", grup: "", platform: "", status: "", prioritas: "" };
+        searchKeyword = "";
+        if(searchInput) searchInput.value = "";
+        renderContentCards();
+        buildDynamicSidebarMenus(); // refresh highlight sidebar
     }
 
-    function showModal(item) {
-        const modal = document.getElementById("modalPreview");
-        const inner = document.getElementById("modalInner");
+    // Filter data berdasarkan search + activeFilters + view
+    function getFilteredData() {
+        let data = [...fullDataset];
+        // search all fields
+        if(searchKeyword.trim() !== "") {
+            const kw = searchKeyword.toLowerCase();
+            data = data.filter(item => Object.values(item).some(val => val && String(val).toLowerCase().includes(kw)));
+        }
+        if(activeFilters.kategori) data = data.filter(i => i.Kategori === activeFilters.kategori);
+        if(activeFilters.grup) data = data.filter(i => i.Grup === activeFilters.grup);
+        if(activeFilters.platform) data = data.filter(i => i.Platform === activeFilters.platform);
+        if(activeFilters.status) data = data.filter(i => i.Status === activeFilters.status);
+        if(activeFilters.prioritas) data = data.filter(i => i.Prioritas === activeFilters.prioritas);
+        if(currentView === "favorit") data = data.filter(i => String(i.Favorit).toUpperCase() === "TRUE");
+        return data;
+    }
+
+    // RENDER konten utama: card modern
+    function renderContentCards() {
+        const filtered = getFilteredData();
+        if(!filtered.length) {
+            mainContent.innerHTML = `<div style="text-align:center;padding:3rem;"><i class="fas fa-search"></i> Tidak ada data sesuai filter</div>`;
+            return;
+        }
+        mainContent.innerHTML = `<div class="data-grid">${filtered.map(item => `
+            <div class="card-item">
+                <h3><i class="fas fa-comment"></i> ${escapeHtml(item.Judul || "Tanpa Judul")}</h3>
+                <div class="badge-row">
+                    <span class="badge-sm"><i class="fas fa-tag"></i> ${item.Kategori || "-"}</span>
+                    <span class="badge-sm"><i class="fas fa-users"></i> ${item.Grup || "-"}</span>
+                    <span class="badge-sm"><i class="fas fa-chart-line"></i> ${item.Prioritas || "-"}</span>
+                </div>
+                <p style="font-size:0.85rem; margin:10px 0;">${(item.Pertanyaan || "").substring(0, 100)}${(item.Pertanyaan||"").length>100?"...":""}</p>
+                <button class="btn-preview" data-preview='${JSON.stringify(escapeJson(item))}'><i class="fas fa-eye"></i> Preview & Salin Jawaban</button>
+            </div>
+        `).join("")}</div>`;
+        // attach preview event
+        document.querySelectorAll(".btn-preview").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const raw = btn.dataset.preview;
+                showModalDialog(JSON.parse(raw));
+            });
+        });
+    }
+
+    // MODAL dengan copy
+    function showModalDialog(item) {
         let answersHtml = "";
-        ["Jawaban 1","Jawaban 2","Jawaban 3","Jawaban 4"].forEach(jaw => {
-            if(item[jaw]) {
-                answersHtml += `<div class="answer-block"><strong>${jaw}</strong><br><p>${escapeHtml(item[jaw])}</p><button class="copy-answer-btn" data-copy="${escapeHtml(item[jaw])}"><i class="far fa-copy"></i> Salin Jawaban</button></div>`;
+        ["Jawaban 1","Jawaban 2","Jawaban 3","Jawaban 4"].forEach(ans => {
+            if(item[ans]) {
+                answersHtml += `
+                    <div style="margin-top:16px; border-top:1px solid var(--card-border); padding-top:12px;">
+                        <strong>${ans}</strong>
+                        <p style="margin:8px 0">${escapeHtml(item[ans])}</p>
+                        <button class="copy-answer" data-clip="${escapeHtml(item[ans])}"><i class="far fa-copy"></i> Salin teks</button>
+                    </div>
+                `;
             }
         });
-        inner.innerHTML = `
-            <h2>${escapeHtml(item.Judul || "Detail")}</h2>
-            <p><strong>Kategori:</strong> ${item.Kategori || "-"} | <strong>Grup:</strong> ${item.Grup || "-"} | <strong>Platform:</strong> ${item.Platform || "-"} | <strong>Prioritas:</strong> ${item.Prioritas || "-"}</p>
-            <hr><p><strong>📌 Pertanyaan:</strong><br>${escapeHtml(item.Pertanyaan || "")}</p>
+        modalBody.innerHTML = `
+            <h2>${escapeHtml(item.Judul || "Detail Knowledge")}</h2>
+            <p><strong>Kategori:</strong> ${item.Kategori || "-"} | <strong>Grup:</strong> ${item.Grup || "-"} | <strong>Platform:</strong> ${item.Platform || "-"} | <strong>Status:</strong> ${item.Status || "-"} | <strong>Prioritas:</strong> ${item.Prioritas || "-"}</p>
+            <hr/>
+            <p><strong><i class="fas fa-question-circle"></i> Pertanyaan:</strong></p>
+            <p>${escapeHtml(item.Pertanyaan || "")}</p>
             ${answersHtml}
         `;
         modal.style.display = "flex";
-        document.querySelectorAll(".copy-answer-btn").forEach(btn => {
+        document.querySelectorAll(".copy-answer").forEach(btn => {
             btn.addEventListener("click", (e) => {
-                const text = btn.dataset.copy;
-                navigator.clipboard.writeText(text);
-                alert("✅ Teks tersalin!");
+                e.stopPropagation();
+                const textToCopy = btn.dataset.clip;
+                navigator.clipboard.writeText(textToCopy);
+                alert("✅ Jawaban tersalin ke clipboard");
             });
         });
     }
 
-    // Interactive category / group: tampilkan item per kategori
-    function buildInteractiveCategoryGroup() {
-        const container = document.getElementById("categoryDynamicList");
-        const kategoriMap = new Map();
-        allData.forEach(item => { if(item.Kategori) { if(!kategoriMap.has(item.Kategori)) kategoriMap.set(item.Kategori, []); kategoriMap.get(item.Kategori).push(item); } });
-        container.innerHTML = Array.from(kategoriMap.entries()).map(([kategori, items]) => `
-            <div class="collapsible-menu">
-                <div class="menu-header sub-cat-header" data-cat="${kategori}"><span><i class="fas fa-folder-open"></i> ${kategori} (${items.length})</span> <i class="fas fa-chevron-right"></i></div>
-                <div class="sub-items" id="sub-${kategori.replace(/[^a-z0-9]/gi,'')}" style="display:none;"></div>
+    // ========== SIDEBAR DINAMIS: MENU HEADER DARI DATABASE ==========
+    // Membuat group berdasarkan field utama: Kategori, Grup, Platform, Status, Prioritas (Header otomatis)
+    // Setiap header bersifat collapsible, dan setiap item di dalamnya mewakili nilai unik, 
+    // saat diklik akan mengaktifkan filter dan menampilkan data terkait.
+    function buildDynamicSidebarMenus() {
+        const configFields = [
+            { key: "Kategori", icon: "fas fa-folder-tree", label: "📂 Kategori" },
+            { key: "Grup", icon: "fas fa-layer-group", label: "🗂️ Grup" },
+            { key: "Platform", icon: "fas fa-globe", label: "🌐 Platform" },
+            { key: "Status", icon: "fas fa-flag-checkered", label: "📌 Status" },
+            { key: "Prioritas", icon: "fas fa-exclamation-triangle", label: "⚡ Prioritas" }
+        ];
+        let menuHTML = `<div style="margin-bottom:1rem;"><h4 style="padding:0 0.8rem; font-size:0.7rem; letter-spacing:1px;"><i class="fas fa-sliders-h"></i> FILTER CEPAT</h4></div>`;
+        
+        for(let cfg of configFields) {
+            const uniqueValues = getUnique(cfg.key);
+            if(uniqueValues.length === 0) continue;
+            const currentActive = activeFilters[cfg.key.toLowerCase()] || "";
+            // membuat header collapsible
+            menuHTML += `
+                <div class="nav-group">
+                    <div class="nav-header" data-group-header="${cfg.key}">
+                        <i class="${cfg.icon}"></i>
+                        <span>${cfg.label} <span class="badge-count">${uniqueValues.length}</span></span>
+                        <i class="fas fa-chevron-down" style="font-size:0.8rem;"></i>
+                    </div>
+                    <div class="nav-children" data-children="${cfg.key}" id="children-${cfg.key}">
+            `;
+            uniqueValues.forEach(val => {
+                const isActive = (currentActive === val);
+                const activeClass = isActive ? 'style="border-left: 3px solid var(--accent); background:var(--hover-bg);"' : '';
+                menuHTML += `
+                    <div class="child-item" data-filter-type="${cfg.key.toLowerCase()}" data-filter-value="${escapeAttr(val)}" ${activeClass}>
+                        <span class="child-title"><i class="fas ${cfg.key === 'Kategori' ? 'fa-tag' : (cfg.key === 'Grup' ? 'fa-folder' : 'fa-filter')}"></i> ${escapeHtml(val)}</span>
+                        <span class="preview-badge" data-preview-filter="${cfg.key.toLowerCase()}" data-value="${escapeAttr(val)}"><i class="fas fa-search-plus"></i></span>
+                    </div>
+                `;
+            });
+            menuHTML += `</div></div>`;
+        }
+        
+        // tambahkan menu favorit quick
+        menuHTML += `<div class="nav-group" style="margin-top: 12px;">
+            <div class="nav-header" id="favoriteQuickHeader">
+                <i class="fas fa-star"></i> <span>⭐ Favorit</span> <i class="fas fa-chevron-down"></i>
             </div>
-        `).join("");
-        kategoriMap.forEach((items, kategori) => {
-            const subDiv = document.getElementById(`sub-${kategori.replace(/[^a-z0-9]/gi,'')}`);
-            if(subDiv) {
-                subDiv.innerHTML = items.map(it => `<div class="sub-question" data-item='${JSON.stringify(escapeJson(it))}'><i class="fas fa-question-circle"></i> ${escapeHtml(it.Judul || it.Pertanyaan?.substring(0,50) || "Item")}<div class="preview-jawaban">Klik untuk copy jawaban <button class="small-copy quick-copy" data-copyquick='${escapeHtml(it["Jawaban 1"] || "")}'><i class="far fa-copy"></i> Salin</button></div></div>`).join("");
-                subDiv.querySelectorAll(".sub-question").forEach(el => {
-                    const itemData = JSON.parse(el.dataset.item);
-                    el.addEventListener("click", (e) => { if(!e.target.classList.contains("quick-copy")) showModal(itemData); });
-                });
-                subDiv.querySelectorAll(".quick-copy").forEach(btn => {
-                    btn.addEventListener("click", (e) => { e.stopPropagation(); const txt = btn.dataset.copyquick; if(txt) { navigator.clipboard.writeText(txt); alert("Jawaban tersalin"); } });
+            <div class="nav-children" id="favoriteQuickChildren">
+                <div class="child-item" data-view-fav="true"><i class="fas fa-heart"></i> Tampilkan hanya favorit</div>
+                <div class="child-item" data-view-all="true"><i class="fas fa-list"></i> Semua data</div>
+            </div>
+        </div>`;
+        
+        dynamicMenu.innerHTML = menuHTML;
+        
+        // ATTACH EVENT: collapsible semua header
+        document.querySelectorAll(".nav-header").forEach(header => {
+            header.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const parentGroup = header.closest(".nav-group");
+                const childrenDiv = parentGroup.querySelector(".nav-children");
+                if(childrenDiv) {
+                    childrenDiv.classList.toggle("open");
+                    const icon = header.querySelector(".fa-chevron-down");
+                    if(icon) icon.style.transform = childrenDiv.classList.contains("open") ? "rotate(180deg)" : "rotate(0deg)";
+                }
+            });
+            // default buka sedikit biar user lihat (opsional)
+            const children = header.parentElement?.querySelector(".nav-children");
+            if(children && header.getAttribute("data-group-header") === "Kategori") children.classList.add("open");
+        });
+        
+        // event filter dari child item
+        document.querySelectorAll(".child-item[data-filter-type]").forEach(child => {
+            const filterType = child.dataset.filterType; // kategori, grup, platform, status, prioritas
+            const filterVal = child.dataset.filterValue;
+            child.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if(filterType && filterVal) {
+                    // toggle filter jika sudah active
+                    if(activeFilters[filterType] === filterVal) {
+                        activeFilters[filterType] = "";
+                    } else {
+                        activeFilters[filterType] = filterVal;
+                    }
+                    currentView = "dashboard";
+                    renderContentCards();
+                    buildDynamicSidebarMenus(); // refresh highlight
+                }
+            });
+            // badge preview bisa memicu filter juga (sama)
+            const badgeSpan = child.querySelector(".preview-badge");
+            if(badgeSpan) {
+                badgeSpan.addEventListener("click", (ev) => {
+                    ev.stopPropagation();
+                    const ft = badgeSpan.dataset.previewFilter;
+                    const fv = badgeSpan.dataset.value;
+                    if(ft && fv) {
+                        activeFilters[ft] = fv;
+                        currentView = "dashboard";
+                        renderContentCards();
+                        buildDynamicSidebarMenus();
+                    }
                 });
             }
-            document.querySelectorAll(`.sub-cat-header[data-cat="${kategori}"]`).forEach(header => {
-                header.addEventListener("click", () => { const targetId = `sub-${kategori.replace(/[^a-z0-9]/gi,'')}`; const sub = document.getElementById(targetId); if(sub) { const isVisible = sub.style.display === "flex"; sub.style.display = isVisible ? "none" : "flex"; } });
-            });
         });
+        
+        // favorit & all
+        const favItem = document.querySelector("[data-view-fav='true']");
+        if(favItem) favItem.addEventListener("click", () => { currentView = "favorit"; renderContentCards(); buildDynamicSidebarMenus(); });
+        const allItem = document.querySelector("[data-view-all='true']");
+        if(allItem) allItem.addEventListener("click", () => { currentView = "dashboard"; resetAllFilters(); renderContentCards(); buildDynamicSidebarMenus(); });
+        
+        // buka children pertama (kategori supaya visible)
+        document.querySelectorAll(".nav-children").forEach((ch,idx) => { if(idx===0) ch.classList.add("open"); });
     }
-
-    function buildInteractiveGroupGroup() {
-        const container = document.getElementById("groupDynamicList");
-        const groupMap = new Map();
-        allData.forEach(item => { if(item.Grup) { if(!groupMap.has(item.Grup)) groupMap.set(item.Grup, []); groupMap.get(item.Grup).push(item); } });
-        container.innerHTML = Array.from(groupMap.entries()).map(([grup, items]) => `
-            <div class="collapsible-menu">
-                <div class="menu-header sub-group-header" data-group="${grup}"><span><i class="fas fa-layer-group"></i> ${grup} (${items.length})</span> <i class="fas fa-chevron-right"></i></div>
-                <div class="sub-items" id="subgroup-${grup.replace(/[^a-z0-9]/gi,'')}" style="display:none;"></div>
-            </div>
-        `).join("");
-        groupMap.forEach((items, grup) => {
-            const subDiv = document.getElementById(`subgroup-${grup.replace(/[^a-z0-9]/gi,'')}`);
-            if(subDiv) {
-                subDiv.innerHTML = items.map(it => `<div class="sub-question" data-item='${JSON.stringify(escapeJson(it))}'><i class="fas fa-comment"></i> ${escapeHtml(it.Judul || it.Pertanyaan?.substring(0,50))}<div class="preview-jawaban"><button class="small-copy quick-copy-group" data-copygroup='${escapeHtml(it["Jawaban 1"] || "")}'>📋 Salin cepat</button></div></div>`).join("");
-                subDiv.querySelectorAll(".sub-question").forEach(el => {
-                    const itemObj = JSON.parse(el.dataset.item);
-                    el.addEventListener("click", (e) => { if(!e.target.classList.contains("quick-copy-group")) showModal(itemObj); });
-                });
-                subDiv.querySelectorAll(".quick-copy-group").forEach(btn => {
-                    btn.addEventListener("click", (e) => { e.stopPropagation(); const txt = btn.dataset.copygroup; if(txt) { navigator.clipboard.writeText(txt); alert("Jawaban disalin"); } });
-                });
-            }
-            document.querySelectorAll(`.sub-group-header[data-group="${grup}"]`).forEach(header => {
-                header.addEventListener("click", () => { const targetId = `subgroup-${grup.replace(/[^a-z0-9]/gi,'')}`; const subPanel = document.getElementById(targetId); if(subPanel) subPanel.style.display = subPanel.style.display === "flex" ? "none" : "flex"; });
-            });
-        });
-    }
-
+    
+    // helper escape
     function escapeHtml(str) { if(!str) return ""; return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+    function escapeAttr(str) { return String(str).replace(/"/g, '&quot;'); }
     function escapeJson(obj) { return JSON.parse(JSON.stringify(obj)); }
-
-    // Sidebar collapse & theme
-    const sidebar = document.getElementById("sidebar");
-    const mainArea = document.getElementById("mainContent");
-    const menuToggle = document.getElementById("menuToggleBtn");
-    menuToggle.addEventListener("click", () => {
+    
+    // EVENT SEARCH
+    searchInput.addEventListener("input", (e) => {
+        searchKeyword = e.target.value;
+        renderContentCards();
+        buildDynamicSidebarMenus(); // untuk menjaga konsistensi highlight
+    });
+    clearSearchIcon.addEventListener("click", () => {
+        searchInput.value = "";
+        searchKeyword = "";
+        renderContentCards();
+        buildDynamicSidebarMenus();
+    });
+    refreshBtn.addEventListener("click", () => fetchData(true));
+    themeBtn.addEventListener("click", () => {
+        document.body.classList.toggle("dark");
+        document.body.classList.toggle("light");
+        const isDark = document.body.classList.contains("dark");
+        themeBtn.innerHTML = isDark ? '<i class="fas fa-moon"></i> Dark' : '<i class="fas fa-sun"></i> Light';
+    });
+    toggleSidebar.addEventListener("click", () => {
         sidebar.classList.toggle("collapsed");
         mainArea.classList.toggle("expanded");
     });
-    const themeBtn = document.getElementById("themeToggleBtn");
-    themeBtn.addEventListener("click", () => {
-        document.body.classList.toggle("light");
-        document.body.classList.toggle("dark");
-        const icon = themeBtn.querySelector("i");
-        if(document.body.classList.contains("light")) { icon.className = "fas fa-sun"; themeBtn.querySelector("span").innerText = "Light"; } else { icon.className = "fas fa-moon"; themeBtn.querySelector("span").innerText = "Dark"; }
-    });
-    document.getElementById("manualRefreshBtn").addEventListener("click", () => loadData(true));
-    searchInput.addEventListener("input", (e) => { searchTerm = e.target.value; renderContent(); });
-    clearSearch.addEventListener("click", () => { searchInput.value = ""; searchTerm = ""; renderContent(); });
-    document.getElementById("closeModalBtn").addEventListener("click", () => document.getElementById("modalPreview").style.display = "none");
-    window.onclick = (e) => { if(e.target === document.getElementById("modalPreview")) document.getElementById("modalPreview").style.display = "none"; };
-    document.getElementById("toggleCategoryList")?.addEventListener("click", () => { const panel = document.getElementById("categoryDynamicList"); if(panel) panel.style.display = panel.style.display === "flex" ? "none" : "flex"; });
-    document.getElementById("toggleGroupList")?.addEventListener("click", () => { const panel = document.getElementById("groupDynamicList"); if(panel) panel.style.display = panel.style.display === "flex" ? "none" : "flex"; });
-    document.querySelectorAll(".filter-header").forEach(header => {
-        header.addEventListener("click", () => { const nextDiv = header.nextElementSibling; if(nextDiv && nextDiv.classList.contains("filter-options")) nextDiv.style.display = nextDiv.style.display === "flex" ? "none" : "flex"; });
-    });
-    // Initial load
-    loadData().then(() => setInterval(() => loadData(), 35000));
+    closeModalSpan.addEventListener("click", () => modal.style.display = "none");
+    window.onclick = (e) => { if(e.target === modal) modal.style.display = "none"; };
+    
+    // auto refresh setiap 35 detik (tanpa mengganggu)
+    setInterval(() => { fetchData(false); }, 35000);
+    fetchData(true);
 </script>
 </body>
 </html>
+```
