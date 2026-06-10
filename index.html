@@ -1,148 +1,705 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>Mini CS - Customer Support Knowledge Base</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Mini CS - Knowledge Base</title>
+    <!-- Google Fonts & Icon Library -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.2s ease;
+        }
+
+        /* Light / Dark Theme Variables */
+        body.light {
+            --bg-page: #f1f5f9;
+            --bg-sidebar: #ffffff;
+            --sidebar-border: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --btn-hover: #e2e8f0;
+            --stat-bg: #ffffff;
+            --stat-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            --modal-bg: #ffffff;
+            --badge-light: #eef2ff;
+        }
+
+        body.dark {
+            --bg-page: #0b1120;
+            --bg-sidebar: #111827;
+            --sidebar-border: #1f2937;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --card-bg: #111827;
+            --card-border: #1f2937;
+            --input-bg: #1e293b;
+            --input-border: #334155;
+            --btn-hover: #1f2937;
+            --stat-bg: #111827;
+            --stat-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --modal-bg: #1e293b;
+            --badge-light: #1e293b;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-primary);
+        }
+
+        /* Layout */
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--sidebar-border);
+            transition: transform 0.3s ease, width 0.2s;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        /* Main content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            transition: margin-left 0.3s ease;
+            padding: 1.5rem 2rem;
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        /* Header / Topbar */
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.8rem;
+        }
+
+        .menu-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 0.6rem 1rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: 0.2s;
+        }
+
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 40px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        /* Search bar */
+        .search-wrapper {
+            position: relative;
+            flex: 1;
+            max-width: 500px;
+        }
+
+        .search-wrapper input {
+            width: 100%;
+            padding: 12px 40px 12px 16px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 40px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-tile {
+            background: var(--stat-bg);
+            border-radius: 20px;
+            padding: 1rem 1rem;
+            border: 1px solid var(--card-border);
+            text-align: center;
+            transition: transform 0.1s ease;
+            cursor: pointer;
+        }
+        .stat-tile:hover { transform: translateY(-2px); background: var(--btn-hover);}
+        .stat-number { font-size: 2rem; font-weight: 700; }
+        .stat-label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
+
+        /* Filter panels in sidebar (collapsible) */
+        .filter-section {
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--sidebar-border);
+            padding-top: 1rem;
+        }
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 0.6rem 0;
+            font-weight: 600;
+        }
+        .filter-options {
+            margin-top: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .filter-chip {
+            background: var(--input-bg);
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.1s;
+            text-align: left;
+            border: 1px solid transparent;
+        }
+        .filter-chip.active-filter {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .filter-chip:hover:not(.active-filter) { background: var(--btn-hover); }
+
+        /* Category / Group menu interaktif (collapsible dengan list pertanyaan) */
+        .nav-category-group {
+            margin-top: 1.5rem;
+        }
+        .collapsible-menu {
+            margin-bottom: 0.8rem;
+        }
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--input-bg);
+            padding: 10px 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .sub-items {
+            margin-left: 1rem;
+            margin-top: 0.5rem;
+            display: none;
+            flex-direction: column;
+            gap: 0.7rem;
+        }
+        .sub-items.open {
+            display: flex;
+        }
+        .sub-question {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 10px;
+            border-left: 3px solid #3b82f6;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .preview-jawaban {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .small-copy {
+            background: none;
+            border: none;
+            color: #3b82f6;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        /* Cards grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.2rem;
+            margin-top: 1rem;
+        }
+        .data-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 1rem;
+            transition: all 0.2s;
+        }
+        .data-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        .badge-info {
+            display: inline-block;
+            background: var(--badge-light);
+            padding: 2px 8px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            margin: 4px 4px 0 0;
+        }
+        .preview-button {
+            margin-top: 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 40px;
+            width: 100%;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+        .modal-container {
+            background: var(--modal-bg);
+            max-width: 700px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            border-radius: 28px;
+            padding: 1.8rem;
+            position: relative;
+        }
+        .modal-close {
+            float: right;
+            font-size: 28px;
+            cursor: pointer;
+        }
+        .answer-block {
+            margin: 1rem 0;
+            border-top: 1px solid var(--card-border);
+            padding-top: 1rem;
+        }
+        .copy-answer-btn {
+            background: #3b82f6;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 30px;
+            color: white;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 260px; }
+            .main-content { margin-left: 0; padding: 1rem; }
+            .main-content.expanded { margin-left: 0; }
+            .stats-grid { grid-template-columns: repeat(2,1fr); }
+        }
+
+        button, .filter-chip, .stat-tile, .preview-button, .menu-toggle, .theme-toggle { transition: all 0.2s; }
+        .fa, .fas, .far { margin-right: 6px; }
+        .refresh-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 40px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+        }
+    </style>
 </head>
-<body>
-
-<div class="app">
-    <!-- Sidebar -->
+<body class="dark">
+<div class="app-layout">
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <i class="fas fa-headset"></i>
-                <h1>Mini CS</h1>
-            </div>
-            <button class="sidebar-toggle" id="sidebarToggle">
-                <i class="fas fa-times"></i>
-            </button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="font-size: 1.6rem;"><i class="fas fa-database"></i> Mini CS</h2>
+            <i class="fas fa-times-circle" id="closeSidebarMobile" style="display: none; cursor: pointer;"></i>
         </div>
 
-        <!-- Main Navigation -->
-        <nav class="main-nav">
-            <button class="menu-btn" data-view="dashboard">
-                <i class="fas fa-chart-line"></i>
-                <span>Dashboard</span>
-            </button>
-            <button class="menu-btn" data-view="kategori">
-                <i class="fas fa-folder-tree"></i>
-                <span>Kategori</span>
-            </button>
-            <button class="menu-btn" data-view="grup">
-                <i class="fas fa-layer-group"></i>
-                <span>Grup</span>
-            </button>
-            <button class="menu-btn" data-view="favorit">
-                <i class="fas fa-star"></i>
-                <span>Favorit</span>
-            </button>
-        </nav>
-
-        <!-- Filter Section (Collapsible) -->
-        <div class="filters-section">
-            <div class="filters-header" id="filtersToggle">
-                <i class="fas fa-filter"></i>
-                <span>Filter Data</span>
-                <i class="fas fa-chevron-down" id="filtersIcon"></i>
+        <!-- Filter collapsible section (Sidebar Filters) -->
+        <div class="filter-section">
+            <div class="filter-header" data-filter-group="kategoriFilterSide">
+                <span><i class="fas fa-tags"></i> Kategori ▼</span>
+                <i class="fas fa-chevron-down"></i>
             </div>
-            <div class="filters-body" id="filtersBody">
-                <div class="filter-group">
-                    <label><i class="fas fa-tag"></i> Kategori</label>
-                    <select id="kategoriFilter" class="filter-select">
-                        <option value="">Semua Kategori</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label><i class="fas fa-layer-group"></i> Grup</label>
-                    <select id="grupFilter" class="filter-select">
-                        <option value="">Semua Grup</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label><i class="fas fa-circle-info"></i> Status</label>
-                    <select id="statusFilter" class="filter-select">
-                        <option value="">Semua Status</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label><i class="fas fa-mobile-alt"></i> Platform</label>
-                    <select id="platformFilter" class="filter-select">
-                        <option value="">Semua Platform</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label><i class="fas fa-flag"></i> Prioritas</label>
-                    <select id="prioritasFilter" class="filter-select">
-                        <option value="">Semua Prioritas</option>
-                    </select>
-                </div>
+            <div class="filter-options" id="kategoriFilterSideContainer"></div>
+        </div>
+        <div class="filter-section">
+            <div class="filter-header" data-filter-group="grupFilterSide">
+                <span><i class="fas fa-folder"></i> Grup ▼</span>
+                <i class="fas fa-chevron-down"></i>
             </div>
+            <div class="filter-options" id="grupFilterSideContainer"></div>
+        </div>
+        <div class="filter-section">
+            <div class="filter-header" data-filter-group="statusFilterSide">
+                <span><i class="fas fa-flag-checkered"></i> Status ▼</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="filter-options" id="statusFilterSideContainer"></div>
+        </div>
+        <div class="filter-section">
+            <div class="filter-header" data-filter-group="platformFilterSide">
+                <span><i class="fab fa-chrome"></i> Platform ▼</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="filter-options" id="platformFilterSideContainer"></div>
+        </div>
+        <div class="filter-section">
+            <div class="filter-header" data-filter-group="prioritasFilterSide">
+                <span><i class="fas fa-exclamation-triangle"></i> Prioritas ▼</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="filter-options" id="prioritasFilterSideContainer"></div>
         </div>
 
-        <!-- Theme Toggle -->
-        <div class="theme-toggle-wrapper">
-            <button class="theme-toggle" id="themeToggle">
-                <i class="fas fa-moon"></i>
-                <span>Dark Mode</span>
-            </button>
+        <!-- Menu Kategori Interaktif (collapsible dengan isi pertanyaan) -->
+        <div class="nav-category-group">
+            <div class="menu-header" id="toggleCategoryList">
+                <span><i class="fas fa-layer-group"></i> 📂 Kategori Interaktif</span> <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="sub-items" id="categoryDynamicList"></div>
         </div>
+
+        <div class="nav-category-group">
+            <div class="menu-header" id="toggleGroupList">
+                <span><i class="fas fa-object-group"></i> 🗂️ Grup Interaktif</span> <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="sub-items" id="groupDynamicList"></div>
+        </div>
+        <div style="margin-top: auto; padding-top: 1rem; font-size: 0.7rem; text-align: center;">Auto-sync setiap 30s</div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="main">
-        <div class="main-header">
-            <button class="mobile-menu-btn" id="mobileMenuBtn">
-                <i class="fas fa-bars"></i>
-            </button>
+    <main class="main-content" id="mainContent">
+        <div class="top-header">
+            <button class="menu-toggle" id="menuToggleBtn"><i class="fas fa-bars"></i> Menu</button>
             <div class="search-wrapper">
-                <div class="search-container">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="searchInput" placeholder="Cari berdasarkan judul, kategori, grup, platform, pertanyaan, jawaban...">
-                    <button class="search-clear" id="searchClear" style="display: none;">
-                        <i class="fas fa-times-circle"></i>
-                    </button>
-                </div>
+                <input type="text" id="globalSearch" placeholder="Cari semua field (judul, kategori, jawaban...)">
+                <span class="search-clear" id="clearSearchBtn"><i class="fas fa-times-circle"></i></span>
             </div>
-            <div class="header-actions">
-                <button class="refresh-btn" id="refreshBtn">
-                    <i class="fas fa-sync-alt"></i>
-                </button>
-                <span class="last-update" id="lastUpdate"></span>
+            <div style="display: flex; gap: 10px;">
+                <button class="refresh-btn" id="manualRefreshBtn"><i class="fas fa-sync-alt"></i> Refresh</button>
+                <button class="theme-toggle" id="themeToggleBtn"><i class="fas fa-moon"></i> <span>Mode</span></button>
             </div>
         </div>
 
-        <!-- Stats Dashboard -->
-        <div class="stats-grid" id="stats"></div>
+        <div class="stats-grid" id="statsDashboard"></div>
 
-        <!-- Content Area -->
-        <div class="content-area" id="content"></div>
+        <!-- Konten Dinamis: Dashboard / Tampilan data -->
+        <div id="dynamicContent"></div>
     </main>
 </div>
 
-<!-- Modal -->
-<div id="modal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 id="modalTitle"></h2>
-            <button class="modal-close" id="closeModal">&times;</button>
-        </div>
-        <div class="modal-body" id="modalBody"></div>
+<div id="modalPreview" class="modal-overlay">
+    <div class="modal-container">
+        <span class="modal-close" id="closeModalBtn">&times;</span>
+        <div id="modalInner"></div>
     </div>
 </div>
 
-<!-- Toast Notification -->
-<div class="toast" id="toast">
-    <i class="fas fa-check-circle"></i>
-    <span>Berhasil disalin!</span>
-</div>
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbyrznbrQDzNXiPc0fJ0fXxClPGtGktm2iTMZbzhin-o6ZenmlZfIbUp4RoCuzTPp5zH/exec";
+    let allData = [];
+    let currentFilters = {
+        kategori: "", grup: "", status: "", platform: "", prioritas: ""
+    };
+    let searchTerm = "";
+    let activeView = "dashboard"; // dashboard, favorit
 
-<script src="js/App.js"></script>
+    // DOM elements
+    const contentDiv = document.getElementById("dynamicContent");
+    const statsDiv = document.getElementById("statsDashboard");
+    const searchInput = document.getElementById("globalSearch");
+    const clearSearch = document.getElementById("clearSearchBtn");
+
+    // Helper load data
+    async function loadData(showToast = false) {
+        try {
+            const res = await fetch(API_URL);
+            const json = await res.json();
+            allData = json.data || [];
+            renderStats();
+            populateSideFilters();
+            buildInteractiveCategoryGroup();
+            buildInteractiveGroupGroup();
+            renderContent();
+            if(showToast) alert("✅ Data terbaru dimuat!");
+        } catch(e) { console.error(e); if(showToast) alert("Gagal refresh"); }
+    }
+
+    function getUniqueValues(field) {
+        return [...new Set(allData.map(item => item[field]).filter(v => v && v.trim() !== ""))].sort();
+    }
+
+    function populateSideFilters() {
+        const kategoriList = getUniqueValues("Kategori");
+        const grupList = getUniqueValues("Grup");
+        const statusList = getUniqueValues("Status");
+        const platformList = getUniqueValues("Platform");
+        const prioritasList = getUniqueValues("Prioritas");
+
+        renderFilterOptions("kategoriFilterSideContainer", kategoriList, "kategori");
+        renderFilterOptions("grupFilterSideContainer", grupList, "grup");
+        renderFilterOptions("statusFilterSideContainer", statusList, "status");
+        renderFilterOptions("platformFilterSideContainer", platformList, "platform");
+        renderFilterOptions("prioritasFilterSideContainer", prioritasList, "prioritas");
+    }
+
+    function renderFilterOptions(containerId, items, filterKey) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = items.map(val => `<div class="filter-chip ${currentFilters[filterKey] === val ? 'active-filter' : ''}" data-filter="${filterKey}" data-value="${val.replace(/"/g, '&quot;')}">${val}</div>`).join("");
+        container.querySelectorAll(".filter-chip").forEach(chip => {
+            chip.addEventListener("click", (e) => {
+                const key = chip.dataset.filter;
+                const val = chip.dataset.value;
+                if (currentFilters[key] === val) currentFilters[key] = "";
+                else currentFilters[key] = val;
+                populateSideFilters(); // re-render highlight
+                renderContent();
+            });
+        });
+    }
+
+    function applySearchAndFilters(data) {
+        let filtered = [...data];
+        if (searchTerm.trim() !== "") {
+            const term = searchTerm.toLowerCase();
+            filtered = filtered.filter(item => {
+                return Object.values(item).some(val => val && String(val).toLowerCase().includes(term));
+            });
+        }
+        if (currentFilters.kategori) filtered = filtered.filter(i => i.Kategori === currentFilters.kategori);
+        if (currentFilters.grup) filtered = filtered.filter(i => i.Grup === currentFilters.grup);
+        if (currentFilters.status) filtered = filtered.filter(i => i.Status === currentFilters.status);
+        if (currentFilters.platform) filtered = filtered.filter(i => i.Platform === currentFilters.platform);
+        if (currentFilters.prioritas) filtered = filtered.filter(i => i.Prioritas === currentFilters.prioritas);
+        if (activeView === "favorit") filtered = filtered.filter(i => String(i.Favorit).toUpperCase() === "TRUE");
+        return filtered;
+    }
+
+    function renderStats() {
+        const total = allData.length;
+        const totalKategori = getUniqueValues("Kategori").length;
+        const totalGrup = getUniqueValues("Grup").length;
+        const totalPlatform = getUniqueValues("Platform").length;
+        const totalFavorit = allData.filter(x => String(x.Favorit).toUpperCase() === "TRUE").length;
+        statsDiv.innerHTML = `
+            <div class="stat-tile" data-stat="all"><div class="stat-number">${total}</div><div class="stat-label">📊 Total Data</div></div>
+            <div class="stat-tile" data-stat="kategori"><div class="stat-number">${totalKategori}</div><div class="stat-label">📂 Kategori</div></div>
+            <div class="stat-tile" data-stat="grup"><div class="stat-number">${totalGrup}</div><div class="stat-label">🗂️ Grup</div></div>
+            <div class="stat-tile" data-stat="platform"><div class="stat-number">${totalPlatform}</div><div class="stat-label">📱 Platform</div></div>
+            <div class="stat-tile" data-stat="favorit"><div class="stat-number">${totalFavorit}</div><div class="stat-label">⭐ Favorit</div></div>
+        `;
+        document.querySelectorAll(".stat-tile").forEach(tile => {
+            tile.addEventListener("click", (e) => {
+                const type = tile.dataset.stat;
+                if (type === "favorit") { activeView = "favorit"; renderContent(); }
+                else if (type === "all") { activeView = "dashboard"; renderContent(); }
+                else if (type === "kategori") { activeView = "dashboard"; currentFilters = { kategori:"", grup:"", status:"", platform:"", prioritas:"" }; searchTerm=""; searchInput.value=""; populateSideFilters(); renderContent(); alert("Menampilkan semua data, filter direset"); }
+                else if (type === "grup") { activeView = "dashboard"; currentFilters = { kategori:"", grup:"", status:"", platform:"", prioritas:"" }; searchTerm=""; searchInput.value=""; populateSideFilters(); renderContent(); }
+                else if (type === "platform") { activeView = "dashboard"; currentFilters = { kategori:"", grup:"", status:"", platform:"", prioritas:"" }; searchTerm=""; searchInput.value=""; populateSideFilters(); renderContent(); }
+                else { activeView = "dashboard"; renderContent(); }
+            });
+        });
+    }
+
+    function renderContent() {
+        let filtered = applySearchAndFilters(allData);
+        if (filtered.length === 0) { contentDiv.innerHTML = `<div style="text-align:center;padding:3rem;">⚠️ Tidak ada data sesuai filter</div>`; return; }
+        if (activeView === "dashboard") {
+            contentDiv.innerHTML = `<div class="cards-grid">${filtered.map(item => `
+                <div class="data-card">
+                    <h3><i class="fas fa-comment-dots"></i> ${escapeHtml(item.Judul || "Tanpa Judul")}</h3>
+                    <div><span class="badge-info"><i class="fas fa-tag"></i> ${item.Kategori || "-"}</span> <span class="badge-info"><i class="fas fa-users"></i> ${item.Grup || "-"}</span> <span class="badge-info"><i class="fas fa-chart-simple"></i> ${item.Prioritas || "-"}</span></div>
+                    <p style="margin-top:8px; font-size:0.85rem;">${(item.Pertanyaan || "").substring(0, 80)}${(item.Pertanyaan||"").length>80?"...":""}</p>
+                    <button class="preview-button" data-id='${JSON.stringify(escapeJson(item))}'><i class="fas fa-eye"></i> Preview & Salin</button>
+                </div>
+            `).join("")}</div>`;
+            document.querySelectorAll(".preview-button").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const raw = btn.dataset.id;
+                    showModal(JSON.parse(raw));
+                });
+            });
+        } else if (activeView === "favorit") {
+            contentDiv.innerHTML = `<h3 style="margin-bottom:1rem"><i class="fas fa-star"></i> Favorit (${filtered.length})</h3><div class="cards-grid">${filtered.map(item => `
+                <div class="data-card"><h3>${escapeHtml(item.Judul)}</h3><p>${escapeHtml(item.Pertanyaan || "")}</p><button class="preview-button" data-id='${JSON.stringify(escapeJson(item))}'>Preview</button></div>
+            `).join("")}</div>`;
+            document.querySelectorAll(".preview-button").forEach(btn => btn.addEventListener("click", (e) => showModal(JSON.parse(btn.dataset.id))));
+        }
+    }
+
+    function showModal(item) {
+        const modal = document.getElementById("modalPreview");
+        const inner = document.getElementById("modalInner");
+        let answersHtml = "";
+        ["Jawaban 1","Jawaban 2","Jawaban 3","Jawaban 4"].forEach(jaw => {
+            if(item[jaw]) {
+                answersHtml += `<div class="answer-block"><strong>${jaw}</strong><br><p>${escapeHtml(item[jaw])}</p><button class="copy-answer-btn" data-copy="${escapeHtml(item[jaw])}"><i class="far fa-copy"></i> Salin Jawaban</button></div>`;
+            }
+        });
+        inner.innerHTML = `
+            <h2>${escapeHtml(item.Judul || "Detail")}</h2>
+            <p><strong>Kategori:</strong> ${item.Kategori || "-"} | <strong>Grup:</strong> ${item.Grup || "-"} | <strong>Platform:</strong> ${item.Platform || "-"} | <strong>Prioritas:</strong> ${item.Prioritas || "-"}</p>
+            <hr><p><strong>📌 Pertanyaan:</strong><br>${escapeHtml(item.Pertanyaan || "")}</p>
+            ${answersHtml}
+        `;
+        modal.style.display = "flex";
+        document.querySelectorAll(".copy-answer-btn").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const text = btn.dataset.copy;
+                navigator.clipboard.writeText(text);
+                alert("✅ Teks tersalin!");
+            });
+        });
+    }
+
+    // Interactive category / group: tampilkan item per kategori
+    function buildInteractiveCategoryGroup() {
+        const container = document.getElementById("categoryDynamicList");
+        const kategoriMap = new Map();
+        allData.forEach(item => { if(item.Kategori) { if(!kategoriMap.has(item.Kategori)) kategoriMap.set(item.Kategori, []); kategoriMap.get(item.Kategori).push(item); } });
+        container.innerHTML = Array.from(kategoriMap.entries()).map(([kategori, items]) => `
+            <div class="collapsible-menu">
+                <div class="menu-header sub-cat-header" data-cat="${kategori}"><span><i class="fas fa-folder-open"></i> ${kategori} (${items.length})</span> <i class="fas fa-chevron-right"></i></div>
+                <div class="sub-items" id="sub-${kategori.replace(/[^a-z0-9]/gi,'')}" style="display:none;"></div>
+            </div>
+        `).join("");
+        kategoriMap.forEach((items, kategori) => {
+            const subDiv = document.getElementById(`sub-${kategori.replace(/[^a-z0-9]/gi,'')}`);
+            if(subDiv) {
+                subDiv.innerHTML = items.map(it => `<div class="sub-question" data-item='${JSON.stringify(escapeJson(it))}'><i class="fas fa-question-circle"></i> ${escapeHtml(it.Judul || it.Pertanyaan?.substring(0,50) || "Item")}<div class="preview-jawaban">Klik untuk copy jawaban <button class="small-copy quick-copy" data-copyquick='${escapeHtml(it["Jawaban 1"] || "")}'><i class="far fa-copy"></i> Salin</button></div></div>`).join("");
+                subDiv.querySelectorAll(".sub-question").forEach(el => {
+                    const itemData = JSON.parse(el.dataset.item);
+                    el.addEventListener("click", (e) => { if(!e.target.classList.contains("quick-copy")) showModal(itemData); });
+                });
+                subDiv.querySelectorAll(".quick-copy").forEach(btn => {
+                    btn.addEventListener("click", (e) => { e.stopPropagation(); const txt = btn.dataset.copyquick; if(txt) { navigator.clipboard.writeText(txt); alert("Jawaban tersalin"); } });
+                });
+            }
+            document.querySelectorAll(`.sub-cat-header[data-cat="${kategori}"]`).forEach(header => {
+                header.addEventListener("click", () => { const targetId = `sub-${kategori.replace(/[^a-z0-9]/gi,'')}`; const sub = document.getElementById(targetId); if(sub) { const isVisible = sub.style.display === "flex"; sub.style.display = isVisible ? "none" : "flex"; } });
+            });
+        });
+    }
+
+    function buildInteractiveGroupGroup() {
+        const container = document.getElementById("groupDynamicList");
+        const groupMap = new Map();
+        allData.forEach(item => { if(item.Grup) { if(!groupMap.has(item.Grup)) groupMap.set(item.Grup, []); groupMap.get(item.Grup).push(item); } });
+        container.innerHTML = Array.from(groupMap.entries()).map(([grup, items]) => `
+            <div class="collapsible-menu">
+                <div class="menu-header sub-group-header" data-group="${grup}"><span><i class="fas fa-layer-group"></i> ${grup} (${items.length})</span> <i class="fas fa-chevron-right"></i></div>
+                <div class="sub-items" id="subgroup-${grup.replace(/[^a-z0-9]/gi,'')}" style="display:none;"></div>
+            </div>
+        `).join("");
+        groupMap.forEach((items, grup) => {
+            const subDiv = document.getElementById(`subgroup-${grup.replace(/[^a-z0-9]/gi,'')}`);
+            if(subDiv) {
+                subDiv.innerHTML = items.map(it => `<div class="sub-question" data-item='${JSON.stringify(escapeJson(it))}'><i class="fas fa-comment"></i> ${escapeHtml(it.Judul || it.Pertanyaan?.substring(0,50))}<div class="preview-jawaban"><button class="small-copy quick-copy-group" data-copygroup='${escapeHtml(it["Jawaban 1"] || "")}'>📋 Salin cepat</button></div></div>`).join("");
+                subDiv.querySelectorAll(".sub-question").forEach(el => {
+                    const itemObj = JSON.parse(el.dataset.item);
+                    el.addEventListener("click", (e) => { if(!e.target.classList.contains("quick-copy-group")) showModal(itemObj); });
+                });
+                subDiv.querySelectorAll(".quick-copy-group").forEach(btn => {
+                    btn.addEventListener("click", (e) => { e.stopPropagation(); const txt = btn.dataset.copygroup; if(txt) { navigator.clipboard.writeText(txt); alert("Jawaban disalin"); } });
+                });
+            }
+            document.querySelectorAll(`.sub-group-header[data-group="${grup}"]`).forEach(header => {
+                header.addEventListener("click", () => { const targetId = `subgroup-${grup.replace(/[^a-z0-9]/gi,'')}`; const subPanel = document.getElementById(targetId); if(subPanel) subPanel.style.display = subPanel.style.display === "flex" ? "none" : "flex"; });
+            });
+        });
+    }
+
+    function escapeHtml(str) { if(!str) return ""; return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+    function escapeJson(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+    // Sidebar collapse & theme
+    const sidebar = document.getElementById("sidebar");
+    const mainArea = document.getElementById("mainContent");
+    const menuToggle = document.getElementById("menuToggleBtn");
+    menuToggle.addEventListener("click", () => {
+        sidebar.classList.toggle("collapsed");
+        mainArea.classList.toggle("expanded");
+    });
+    const themeBtn = document.getElementById("themeToggleBtn");
+    themeBtn.addEventListener("click", () => {
+        document.body.classList.toggle("light");
+        document.body.classList.toggle("dark");
+        const icon = themeBtn.querySelector("i");
+        if(document.body.classList.contains("light")) { icon.className = "fas fa-sun"; themeBtn.querySelector("span").innerText = "Light"; } else { icon.className = "fas fa-moon"; themeBtn.querySelector("span").innerText = "Dark"; }
+    });
+    document.getElementById("manualRefreshBtn").addEventListener("click", () => loadData(true));
+    searchInput.addEventListener("input", (e) => { searchTerm = e.target.value; renderContent(); });
+    clearSearch.addEventListener("click", () => { searchInput.value = ""; searchTerm = ""; renderContent(); });
+    document.getElementById("closeModalBtn").addEventListener("click", () => document.getElementById("modalPreview").style.display = "none");
+    window.onclick = (e) => { if(e.target === document.getElementById("modalPreview")) document.getElementById("modalPreview").style.display = "none"; };
+    document.getElementById("toggleCategoryList")?.addEventListener("click", () => { const panel = document.getElementById("categoryDynamicList"); if(panel) panel.style.display = panel.style.display === "flex" ? "none" : "flex"; });
+    document.getElementById("toggleGroupList")?.addEventListener("click", () => { const panel = document.getElementById("groupDynamicList"); if(panel) panel.style.display = panel.style.display === "flex" ? "none" : "flex"; });
+    document.querySelectorAll(".filter-header").forEach(header => {
+        header.addEventListener("click", () => { const nextDiv = header.nextElementSibling; if(nextDiv && nextDiv.classList.contains("filter-options")) nextDiv.style.display = nextDiv.style.display === "flex" ? "none" : "flex"; });
+    });
+    // Initial load
+    loadData().then(() => setInterval(() => loadData(), 35000));
+</script>
 </body>
 </html>
