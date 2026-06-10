@@ -377,4 +377,114 @@ function renderDashboardView(data) {
 // Global functions for onclick
 window.toggleCategory = function(id) {
     const element = document.getElementById(`cat-${id.replace(/[^a-zA-Z0-9]/g, '_')}`);
-    if (element) element.classList.toggle
+    if (element) element.classList.toggle('open');
+};
+
+window.toggleGroup = function(id) {
+    const element = document.getElementById(`grp-${id.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    if (element) element.classList.toggle('open');
+};
+
+window.copyItemToClipboard = function(item) {
+    const text = `${item.Judul || ''}\n\n${item.Pertanyaan || ''}\n\n${item["Jawaban 1"] || ''}${item["Jawaban 2"] ? '\n\n' + item["Jawaban 2"] : ''}${item["Jawaban 3"] ? '\n\n' + item["Jawaban 3"] : ''}${item["Jawaban 4"] ? '\n\n' + item["Jawaban 4"] : ''}`;
+    navigator.clipboard.writeText(text);
+    showToast('📋 Berhasil disalin ke clipboard!', 1500);
+};
+
+window.showModal = function(item) {
+    const modalBody = document.getElementById("modalBody");
+    const modalTitle = document.getElementById("modalTitle");
+    
+    modalTitle.textContent = item.Judul || "Detail";
+    
+    let html = `
+        <div class="modal-section">
+            <h4>📋 Informasi</h4>
+            <div class="modal-text">
+                <strong>Kategori:</strong> ${escapeHtml(item.Kategori || '-')}<br>
+                <strong>Grup:</strong> ${escapeHtml(item.Grup || '-')}<br>
+                <strong>Status:</strong> ${escapeHtml(item.Status || '-')}<br>
+                <strong>Platform:</strong> ${escapeHtml(item.Platform || '-')}<br>
+                <strong>Prioritas:</strong> ${escapeHtml(item.Prioritas || '-')}
+            </div>
+        </div>
+    `;
+    
+    if (item.Pertanyaan) {
+        html += `
+            <div class="modal-section">
+                <h4>❓ Pertanyaan</h4>
+                <div class="modal-text">${escapeHtml(item.Pertanyaan)}</div>
+                <button class="copy-btn" onclick="copyText('${escapeHtml(item.Pertanyaan).replace(/'/g, "\\'")}')">📋 Copy</button>
+            </div>
+        `;
+    }
+    
+    ["Jawaban 1", "Jawaban 2", "Jawaban 3", "Jawaban 4"].forEach(key => {
+        if (item[key]) {
+            html += `
+                <div class="modal-section">
+                    <h4>💬 ${key}</h4>
+                    <div class="modal-text">${escapeHtml(item[key])}</div>
+                    <button class="copy-btn" onclick="copyText('${escapeHtml(item[key]).replace(/'/g, "\\'")}')">📋 Copy</button>
+                </div>
+            `;
+        }
+    });
+    
+    modalBody.innerHTML = html;
+    document.getElementById('modal').style.display = 'flex';
+};
+
+window.copyText = function(text) {
+    navigator.clipboard.writeText(text);
+    showToast('📋 Teks berhasil disalin!', 1500);
+};
+
+function showToast(message, duration = 2000) {
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) existingToast.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, duration);
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function loadTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        themeToggle.textContent = '🌙 Dark Mode';
+    } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        themeToggle.textContent = '☀️ Light Mode';
+    }
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    if (currentTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+        themeToggle.textContent = '🌙 Dark Mode';
+    } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        themeToggle.textContent = '☀️ Light Mode';
+    }
+}
