@@ -13,9 +13,11 @@
 
 <div class="layout">
 
-    <aside class="sidebar">
+   <aside class="sidebar" id="sidebar">
 
-        <h1>Mini CS</h1>
+        <h1 class="logo">
+📋 Online CS Pro
+</h1>
 
         <nav>
             <button class="menu-btn active" data-view="dashboard">📊 Dashboard</button>
@@ -79,7 +81,43 @@
 
     </div>
 </div>
+<script>
 
+const sidebar =
+document.getElementById("sidebar");
+
+const toggleSidebar =
+document.getElementById("toggleSidebar");
+
+toggleSidebar.onclick = () => {
+
+sidebar.classList.toggle("collapsed");
+
+};
+
+const themeToggle =
+document.getElementById("themeToggle");
+
+themeToggle.onclick = () => {
+
+document.body.classList.toggle("light");
+
+localStorage.setItem(
+"theme",
+document.body.classList.contains("light")
+? "light"
+: "dark"
+);
+
+};
+
+if(localStorage.getItem("theme")==="light"){
+
+document.body.classList.add("light");
+
+}
+
+</script>
 <script src="js/App.js"></script>
 
 </body>
