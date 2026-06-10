@@ -3,9 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>Mini CS - Knowledge Base</title>
-<link rel="stylesheet" href="css/style.css">
+<title>Mini CS - Customer Support Knowledge Base</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
@@ -13,90 +16,113 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h1>📋 Mini CS</h1>
-            <button class="close-sidebar" id="closeSidebar">✕</button>
+            <div class="logo">
+                <i class="fas fa-headset"></i>
+                <h1>Mini CS</h1>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
 
-        <div class="sidebar-nav">
-            <button class="menu-btn active" data-view="dashboard">
-                <span class="icon">📊</span> Dashboard
+        <!-- Main Navigation -->
+        <nav class="main-nav">
+            <button class="menu-btn" data-view="dashboard">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
             </button>
             <button class="menu-btn" data-view="kategori">
-                <span class="icon">📂</span> Kategori
+                <i class="fas fa-folder-tree"></i>
+                <span>Kategori</span>
             </button>
             <button class="menu-btn" data-view="grup">
-                <span class="icon">🗂️</span> Grup
+                <i class="fas fa-layer-group"></i>
+                <span>Grup</span>
             </button>
             <button class="menu-btn" data-view="favorit">
-                <span class="icon">⭐</span> Favorit
+                <i class="fas fa-star"></i>
+                <span>Favorit</span>
             </button>
-        </div>
+        </nav>
 
-        <!-- Collapsible Filters Section -->
+        <!-- Filter Section (Collapsible) -->
         <div class="filters-section">
-            <button class="filter-toggle" id="filterToggle">
-                <span>🔍 Filter Data</span>
-                <span class="toggle-icon">▼</span>
-            </button>
-            <div class="filters-panel" id="filtersPanel">
+            <div class="filters-header" id="filtersToggle">
+                <i class="fas fa-filter"></i>
+                <span>Filter Data</span>
+                <i class="fas fa-chevron-down" id="filtersIcon"></i>
+            </div>
+            <div class="filters-body" id="filtersBody">
                 <div class="filter-group">
-                    <label>📁 Kategori</label>
+                    <label><i class="fas fa-tag"></i> Kategori</label>
                     <select id="kategoriFilter" class="filter-select">
-                        <option value="">Semua</option>
+                        <option value="">Semua Kategori</option>
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>🗂️ Grup</label>
+                    <label><i class="fas fa-layer-group"></i> Grup</label>
                     <select id="grupFilter" class="filter-select">
-                        <option value="">Semua</option>
+                        <option value="">Semua Grup</option>
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>📌 Status</label>
+                    <label><i class="fas fa-circle-info"></i> Status</label>
                     <select id="statusFilter" class="filter-select">
-                        <option value="">Semua</option>
+                        <option value="">Semua Status</option>
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>💻 Platform</label>
+                    <label><i class="fas fa-mobile-alt"></i> Platform</label>
                     <select id="platformFilter" class="filter-select">
-                        <option value="">Semua</option>
+                        <option value="">Semua Platform</option>
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>⚡ Prioritas</label>
+                    <label><i class="fas fa-flag"></i> Prioritas</label>
                     <select id="prioritasFilter" class="filter-select">
-                        <option value="">Semua</option>
+                        <option value="">Semua Prioritas</option>
                     </select>
                 </div>
             </div>
         </div>
 
-        <div class="sidebar-footer">
-            <button class="theme-toggle" id="themeToggle">🌙 Dark Mode</button>
-            <button class="refresh-btn" id="refreshBtn">🔄 Refresh Data</button>
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-wrapper">
+            <button class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+                <span>Dark Mode</span>
+            </button>
         </div>
     </aside>
 
     <!-- Main Content -->
     <main class="main">
         <div class="main-header">
-            <button class="open-sidebar" id="openSidebar">☰</button>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="search-wrapper">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="searchInput" placeholder="Cari berdasarkan judul, kategori, grup, platform, pertanyaan, jawaban...">
-                <button class="clear-search" id="clearSearch">✕</button>
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="searchInput" placeholder="Cari berdasarkan judul, kategori, grup, platform, pertanyaan, jawaban...">
+                    <button class="search-clear" id="searchClear" style="display: none;">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </div>
             </div>
             <div class="header-actions">
-                <span class="last-update" id="lastUpdate">-</span>
+                <button class="refresh-btn" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <span class="last-update" id="lastUpdate"></span>
             </div>
         </div>
 
         <!-- Stats Dashboard -->
-        <section id="stats" class="stats"></section>
+        <div class="stats-grid" id="stats"></div>
 
         <!-- Content Area -->
-        <section id="content" class="content-area"></section>
+        <div class="content-area" id="content"></div>
     </main>
 </div>
 
@@ -105,10 +131,16 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2 id="modalTitle"></h2>
-            <span id="closeModal">&times;</span>
+            <button class="modal-close" id="closeModal">&times;</button>
         </div>
-        <div id="modalBody" class="modal-body"></div>
+        <div class="modal-body" id="modalBody"></div>
     </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast">
+    <i class="fas fa-check-circle"></i>
+    <span>Berhasil disalin!</span>
 </div>
 
 <script src="js/App.js"></script>
