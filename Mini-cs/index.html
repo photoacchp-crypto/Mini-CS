@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Mini CS</title>
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <h1>Mini CS</h1>
+
+        <nav>
+            <button class="menu-btn active" data-view="dashboard">📊 Dashboard</button>
+            <button class="menu-btn" data-view="kategori">📂 Kategori</button>
+            <button class="menu-btn" data-view="grup">🗂 Grup</button>
+            <button class="menu-btn" data-view="favorit">⭐ Favorit</button>
+        </nav>
+
+    </aside>
+
+    <main class="main">
+
+        <div class="topbar">
+
+            <input
+                id="searchInput"
+                type="text"
+                placeholder="Cari template..."
+            >
+
+        </div>
+
+        <section id="stats" class="stats"></section>
+
+        <section class="filters">
+
+            <select id="kategoriFilter">
+                <option value="">Semua Kategori</option>
+            </select>
+
+            <select id="grupFilter">
+                <option value="">Semua Grup</option>
+            </select>
+
+            <select id="statusFilter">
+                <option value="">Semua Status</option>
+            </select>
+
+            <select id="platformFilter">
+                <option value="">Semua Platform</option>
+            </select>
+
+            <select id="prioritasFilter">
+                <option value="">Semua Prioritas</option>
+            </select>
+
+        </section>
+
+        <section id="content"></section>
+
+    </main>
+
+</div>
+
+<div id="modal" class="modal">
+    <div class="modal-content">
+
+        <span id="closeModal">&times;</span>
+
+        <div id="modalBody"></div>
+
+    </div>
+</div>
+
+<script src="js/app.js"></script>
+
+</body>
+</html>
