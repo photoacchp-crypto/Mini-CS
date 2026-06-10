@@ -1,247 +1,212 @@
-// Konfigurasi API
 const API_URL = "https://script.google.com/macros/s/AKfycbyrznbrQDzNXiPc0fJ0fXxClPGtGktm2iTMZbzhin-o6ZenmlZfIbUp4RoCuzTPp5zH/exec";
 
-// State Management
 let allData = [];
 let currentView = "dashboard";
 let isLoading = false;
-let refreshInterval = null;
+let refreshTimer = null;
+let searchDebounce = null;
 
 // DOM Elements
-let searchInput, kategoriFilter, grupFilter, statusFilter, platformFilter, prioritasFilter;
-let content, stats, modal, modalBody;
+let searchInput, clearSearch, kategoriFilter, grupFilter, statusFilter, platformFilter, prioritasFilter;
+let content, stats, lastUpdate, themeToggle, refreshBtn, openSidebar, closeSidebar, sidebar, main;
+let filterToggle, filtersPanel;
 
-// Inisialisasi saat DOM siap
-document.addEventListener("DOMContentLoaded", () => {
-    // Inisialisasi DOM elements
-    searchInput = document.getElementById("searchInput");
-    kategoriFilter = document.getElementById("kategoriFilter");
-    grupFilter = document.getElementById("grupFilter");
-    statusFilter = document.getElementById("statusFilter");
-    platformFilter = document.getElementById("platformFilter");
-    prioritasFilter = document.getElementById("prioritasFilter");
-    content = document.getElementById("content");
-    stats = document.getElementById("stats");
-    modal = document.getElementById("modal");
-    modalBody = document.getElementById("modalBody");
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    // Get elements
+    searchInput = document.getElementById('searchInput');
+    clearSearch = document.getElementById('clearSearch');
+    kategoriFilter = document.getElementById('kategoriFilter');
+    grupFilter = document.getElementById('grupFilter');
+    statusFilter = document.getElementById('statusFilter');
+    platformFilter = document.getElementById('platformFilter');
+    prioritasFilter = document.getElementById('prioritasFilter');
+    content = document.getElementById('content');
+    stats = document.getElementById('stats');
+    lastUpdate = document.getElementById('lastUpdate');
+    themeToggle = document.getElementById('themeToggle');
+    refreshBtn = document.getElementById('refreshBtn');
+    openSidebar = document.getElementById('openSidebar');
+    closeSidebar = document.getElementById('closeSidebar');
+    sidebar = document.getElementById('sidebar');
+    main = document.querySelector('.main');
+    filterToggle = document.getElementById('filterToggle');
+    filtersPanel = document.getElementById('filtersPanel');
+    
+    // Load theme preference
+    loadTheme();
     
     // Setup event listeners
     setupEventListeners();
     
-    // Load initial data
+    // Load data
     loadData();
     
-    // Setup auto-refresh setiap 30 detik (tidak mengganggu)
-    startAutoRefresh();
+    // Auto refresh every 5 minutes (without polling, manual + silent)
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(silentRefresh, 300000);
 });
 
-// Setup semua event listeners
 function setupEventListeners() {
-    // Close modal
-    const closeModal = document.getElementById("closeModal");
-    if (closeModal) {
-        closeModal.onclick = () => modal.style.display = "none";
-    }
+    // Search
+    searchInput.addEventListener('input', handleSearch);
+    clearSearch.addEventListener('click', clearSearchInput);
     
-    window.onclick = (e) => {
-        if (e.target === modal) modal.style.display = "none";
-    };
+    // Filters
+    [kategoriFilter, grupFilter, statusFilter, platformFilter, prioritasFilter].forEach(filter => {
+        filter.addEventListener('change', () => renderContent());
+    });
     
     // Menu buttons
-    document.querySelectorAll(".menu-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            document.querySelectorAll(".menu-btn").forEach(x => x.classList.remove("active"));
-            btn.classList.add("active");
+    document.querySelectorAll('.menu-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.menu-btn').forEach(x => x.classList.remove('active'));
+            btn.classList.add('active');
             currentView = btn.dataset.view;
             renderContent();
-            
-            // Update URL hash untuk navigasi
-            window.location.hash = currentView;
         });
     });
     
-    // Filter perubahan
-    const selects = [kategoriFilter, grupFilter, statusFilter, platformFilter, prioritasFilter];
-    selects.forEach(select => {
-        if (select) select.addEventListener("change", () => renderContent());
+    // Theme
+    themeToggle.addEventListener('click', toggleTheme);
+    
+    // Refresh
+    refreshBtn.addEventListener('click', () => {
+        showToast('🔄 Memuat ulang data...');
+        loadData(true);
     });
     
-    // Search dengan debounce
-    if (searchInput) {
-        searchInput.addEventListener("input", debounce(() => renderContent(), 300));
-    }
+    // Sidebar toggle
+    openSidebar.addEventListener('click', () => {
+        sidebar.classList.add('open');
+    });
     
-    // Tombol reset pencarian
-    const resetSearchBtn = document.getElementById("resetSearch");
-    if (resetSearchBtn) {
-        resetSearchBtn.addEventListener("click", () => {
-            if (searchInput) searchInput.value = "";
-            renderContent();
-            showToast("Pencarian direset", 1500);
-        });
-    }
+    closeSidebar.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+    });
     
-    // Tombol refresh manual
-    const refreshBtn = document.getElementById("refreshBtn");
-    if (refreshBtn) {
-        refreshBtn.addEventListener("click", () => {
-            loadData(true);
-        });
-    }
-    
-    // Tombol tema
-    const themeToggle = document.getElementById("themeToggle");
-    if (themeToggle) {
-        themeToggle.addEventListener("click", toggleTheme);
-    }
-    
-    // Tombol collapse sidebar
-    const sidebarToggle = document.getElementById("sidebarToggle");
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener("click", toggleSidebar);
-    }
-    
-    // Filter collapsible
-    const filterHeader = document.getElementById("filterHeader");
-    if (filterHeader) {
-        filterHeader.addEventListener("click", () => {
-            const filterContent = document.getElementById("filterContent");
-            const arrow = document.getElementById("filterArrow");
-            if (filterContent.style.display === "none") {
-                filterContent.style.display = "flex";
-                if (arrow) arrow.textContent = "▼";
-            } else {
-                filterContent.style.display = "none";
-                if (arrow) arrow.textContent = "▶";
-            }
-        });
-    }
-    
-    // Handle hash change untuk navigasi
-    window.addEventListener("hashchange", () => {
-        const hash = window.location.hash.slice(1);
-        if (["dashboard", "kategori", "grup", "favorit"].includes(hash)) {
-            currentView = hash;
-            const activeBtn = document.querySelector(`.menu-btn[data-view="${hash}"]`);
-            if (activeBtn) {
-                document.querySelectorAll(".menu-btn").forEach(x => x.classList.remove("active"));
-                activeBtn.classList.add("active");
-                renderContent();
+    // Close sidebar on click outside (mobile)
+    document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768) {
+            if (!sidebar.contains(e.target) && !openSidebar.contains(e.target)) {
+                sidebar.classList.remove('open');
             }
         }
     });
-}
-
-// Debounce function untuk optimize search
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
+    
+    // Filter toggle
+    if (filterToggle) {
+        filterToggle.addEventListener('click', () => {
+            filterToggle.classList.toggle('open');
+            filtersPanel.classList.toggle('show');
+        });
+    }
+    
+    // Modal close
+    const modal = document.getElementById('modal');
+    const closeModal = document.getElementById('closeModal');
+    closeModal.onclick = () => modal.style.display = 'none';
+    window.onclick = (e) => {
+        if (e.target === modal) modal.style.display = 'none';
     };
 }
 
-// Load data dari spreadsheet
-async function loadData(showToastMsg = false) {
+function handleSearch() {
+    if (searchDebounce) clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+        renderContent();
+    }, 300);
+    clearSearch.classList.toggle('visible', searchInput.value.length > 0);
+}
+
+function clearSearchInput() {
+    searchInput.value = '';
+    clearSearch.classList.remove('visible');
+    renderContent();
+}
+
+async function loadData(showLoading = true) {
     if (isLoading) return;
-    
     isLoading = true;
     
-    if (showToastMsg) {
-        showToast("Mengambil data terbaru...", 1000);
+    if (showLoading) {
+        content.innerHTML = `
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>Memuat data dari spreadsheet...</p>
+            </div>
+        `;
     }
     
     try {
-        const res = await fetch(`${API_URL}?_=${Date.now()}`); // Cache busting
+        const res = await fetch(API_URL);
         const json = await res.json();
+        allData = json.data || [];
         
-        if (json.data && Array.isArray(json.data)) {
-            allData = json.data;
-            renderStats();
-            populateFilters();
-            renderContent();
-            
-            if (showToastMsg) {
-                showToast(`✓ ${allData.length} data berhasil dimuat`, 2000);
-            }
-        } else {
-            throw new Error("Format data tidak valid");
-        }
+        // Update last update time
+        const now = new Date();
+        lastUpdate.textContent = `Last update: ${now.toLocaleTimeString()}`;
+        
+        renderStats();
+        populateFilters();
+        renderContent();
+        
+        showToast(`✅ ${allData.length} data berhasil dimuat`, 2000);
     } catch(err) {
-        console.error("Error loading data:", err);
-        showToast("Gagal memuat data. Periksa koneksi internet.", 3000);
-        
-        // Tampilkan pesan error di content
-        if (content) {
-            content.innerHTML = `
-                <div class="error-message">
-                    <p>⚠️ Gagal memuat data dari spreadsheet</p>
-                    <small>${err.message}</small>
-                    <button onclick="location.reload()" class="retry-btn">Coba Lagi</button>
-                </div>
-            `;
-        }
+        console.error(err);
+        content.innerHTML = `
+            <div class="loading">
+                <p>❌ Gagal memuat data</p>
+                <button onclick="location.reload()" style="margin-top:16px;padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:white;cursor:pointer;">Coba Lagi</button>
+            </div>
+        `;
+        showToast('❌ Gagal memuat data dari spreadsheet', 3000);
     } finally {
         isLoading = false;
     }
 }
 
-// Auto refresh dengan interval yang tidak mengganggu
-function startAutoRefresh() {
-    if (refreshInterval) clearInterval(refreshInterval);
-    refreshInterval = setInterval(() => {
-        if (!isLoading && document.visibilityState === "visible") {
-            loadData(false); // Silent refresh
+async function silentRefresh() {
+    try {
+        const res = await fetch(API_URL);
+        const json = await res.json();
+        if (json.data && json.data.length !== allData.length) {
+            allData = json.data;
+            renderStats();
+            populateFilters();
+            renderContent();
+            const now = new Date();
+            lastUpdate.textContent = `Last update: ${now.toLocaleTimeString()}`;
+            showToast('🔄 Data telah diperbarui', 2000);
         }
-    }, 30000);
-}
-
-// Stop auto refresh (berguna untuk halaman yang tidak aktif)
-function stopAutoRefresh() {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
-        refreshInterval = null;
+    } catch(err) {
+        console.error('Silent refresh failed:', err);
     }
 }
 
-// Unique values helper
 function unique(field) {
     return [...new Set(allData.map(x => x[field]).filter(Boolean))];
 }
 
-// Populate filter dropdowns
 function populateFilters() {
-    fillSelect("kategoriFilter", "Kategori", kategoriFilter);
-    fillSelect("grupFilter", "Grup", grupFilter);
-    fillSelect("statusFilter", "Status", statusFilter);
-    fillSelect("platformFilter", "Platform", platformFilter);
-    fillSelect("prioritasFilter", "Prioritas", prioritasFilter);
+    fillSelect(kategoriFilter, "Kategori", "Semua Kategori");
+    fillSelect(grupFilter, "Grup", "Semua Grup");
+    fillSelect(statusFilter, "Status", "Semua Status");
+    fillSelect(platformFilter, "Platform", "Semua Platform");
+    fillSelect(prioritasFilter, "Prioritas", "Semua Prioritas");
 }
 
-function fillSelect(elementId, key, selectElement) {
-    if (!selectElement) return;
-    
-    const current = selectElement.value;
-    selectElement.innerHTML = `<option value="">Semua ${key}</option>`;
-    
+function fillSelect(select, key, defaultLabel) {
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = `<option value="">${defaultLabel}</option>`;
     unique(key).forEach(item => {
-        const option = document.createElement("option");
-        option.value = item;
-        option.textContent = item;
-        selectElement.appendChild(option);
+        select.innerHTML += `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`;
     });
-    
-    selectElement.value = current;
+    select.value = current;
 }
 
-// Render statistics cards
 function renderStats() {
-    if (!stats) return;
-    
     const totalData = allData.length;
     const totalKategori = unique("Kategori").length;
     const totalGrup = unique("Grup").length;
@@ -250,310 +215,166 @@ function renderStats() {
     
     stats.innerHTML = `
         <div class="stat-card">
-            <div class="stat-icon">📊</div>
-            <div class="stat-info">
-                <h2>${totalData}</h2>
-                <p>Total Data</p>
-            </div>
+            <h2>${totalData}</h2>
+            <p>Total Data</p>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">📂</div>
-            <div class="stat-info">
-                <h2>${totalKategori}</h2>
-                <p>Total Kategori</p>
-            </div>
+            <h2>${totalKategori}</h2>
+            <p>Total Kategori</p>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">🗂️</div>
-            <div class="stat-info">
-                <h2>${totalGrup}</h2>
-                <p>Total Grup</p>
-            </div>
+            <h2>${totalGrup}</h2>
+            <p>Total Grup</p>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">📱</div>
-            <div class="stat-info">
-                <h2>${totalPlatform}</h2>
-                <p>Total Platform</p>
-            </div>
+            <h2>${totalPlatform}</h2>
+            <p>Total Platform</p>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">⭐</div>
-            <div class="stat-info">
-                <h2>${totalFavorit}</h2>
-                <p>Total Favorit</p>
-            </div>
+            <h2>${totalFavorit}</h2>
+            <p>⭐ Favorit</p>
         </div>
     `;
 }
 
-// Filter data berdasarkan search dan filter
 function filterData() {
-    const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
-    const kategoriVal = kategoriFilter ? kategoriFilter.value : "";
-    const grupVal = grupFilter ? grupFilter.value : "";
-    const statusVal = statusFilter ? statusFilter.value : "";
-    const platformVal = platformFilter ? platformFilter.value : "";
-    const prioritasVal = prioritasFilter ? prioritasFilter.value : "";
+    const search = searchInput.value.toLowerCase().trim();
     
     return allData.filter(item => {
-        // Search di semua field
-        if (searchTerm) {
+        // Search across all fields
+        if (search) {
             const searchableText = [
-                item.Judul,
-                item.Kategori,
-                item.Grup,
-                item.Platform,
-                item.Status,
-                item.Prioritas,
-                item.Pertanyaan,
-                item["Jawaban 1"],
-                item["Jawaban 2"],
-                item["Jawaban 3"],
-                item["Jawaban 4"]
+                item.Judul, item.Kategori, item.Grup, item.Platform,
+                item.Pertanyaan, item["Jawaban 1"], item["Jawaban 2"],
+                item["Jawaban 3"], item["Jawaban 4"], item.Status, item.Prioritas
             ].filter(Boolean).join(" ").toLowerCase();
             
-            if (!searchableText.includes(searchTerm)) return false;
+            if (!searchableText.includes(search)) return false;
         }
         
-        // Filter dropdowns
-        if (kategoriVal && item.Kategori !== kategoriVal) return false;
-        if (grupVal && item.Grup !== grupVal) return false;
-        if (statusVal && item.Status !== statusVal) return false;
-        if (platformVal && item.Platform !== platformVal) return false;
-        if (prioritasVal && item.Prioritas !== prioritasVal) return false;
-        
-        // Filter favorit
+        // Filters
+        if (kategoriFilter.value && item.Kategori !== kategoriFilter.value) return false;
+        if (grupFilter.value && item.Grup !== grupFilter.value) return false;
+        if (statusFilter.value && item.Status !== statusFilter.value) return false;
+        if (platformFilter.value && item.Platform !== platformFilter.value) return false;
+        if (prioritasFilter.value && item.Prioritas !== prioritasFilter.value) return false;
         if (currentView === "favorit" && String(item.Favorit).toUpperCase() !== "TRUE") return false;
         
         return true;
     });
 }
 
-// Escape HTML untuk security
-function escapeHtml(text) {
-    if (!text) return "";
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Render konten utama
 function renderContent() {
-    if (!content) return;
-    
     let data = filterData();
     
-    // Tampilan kategori
     if (currentView === "kategori") {
-        const map = {};
-        data.forEach(item => {
-            const key = item.Kategori || "Tanpa Kategori";
-            map[key] = (map[key] || 0) + 1;
-        });
-        
-        content.innerHTML = Object.entries(map)
-            .map(([k, v]) => `
-                <div class="card kategori-card">
-                    <div class="card-icon">📁</div>
-                    <div class="card-content">
-                        <h3>${escapeHtml(k)}</h3>
-                        <p>${v} Template</p>
+        renderKategoriView(data);
+    } else if (currentView === "grup") {
+        renderGrupView(data);
+    } else {
+        renderDashboardView(data);
+    }
+}
+
+function renderKategoriView(data) {
+    const map = {};
+    data.forEach(item => {
+        const kategori = item.Kategori || "Tanpa Kategori";
+        if (!map[kategori]) map[kategori] = [];
+        map[kategori].push(item);
+    });
+    
+    content.innerHTML = `
+        <div class="category-grid">
+            ${Object.entries(map).sort().map(([kategori, items]) => `
+                <div class="category-card">
+                    <div class="category-header" onclick="toggleCategory('${kategori.replace(/'/g, "\\'")}')">
+                        <h3>📁 ${escapeHtml(kategori)}</h3>
+                        <span class="category-count">${items.length} item</span>
+                    </div>
+                    <div class="category-items" id="cat-${kategori.replace(/[^a-zA-Z0-9]/g, '_')}">
+                        ${items.map(item => `
+                            <div class="category-item">
+                                <div class="category-item-title">${escapeHtml(item.Judul || '-')}</div>
+                                <button class="category-item-copy" onclick='copyItemToClipboard(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+                                    📋 Copy
+                                </button>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
-            `).join("");
-        return;
-    }
+            `).join('')}
+        </div>
+    `;
+}
+
+function renderGrupView(data) {
+    const map = {};
+    data.forEach(item => {
+        const grup = item.Grup || "Tanpa Grup";
+        if (!map[grup]) map[grup] = [];
+        map[grup].push(item);
+    });
     
-    // Tampilan grup
-    if (currentView === "grup") {
-        const map = {};
-        data.forEach(item => {
-            const key = item.Grup || "Umum";
-            map[key] = (map[key] || 0) + 1;
-        });
-        
-        content.innerHTML = Object.entries(map)
-            .map(([k, v]) => `
-                <div class="card grup-card">
-                    <div class="card-icon">🗂️</div>
-                    <div class="card-content">
-                        <h3>${escapeHtml(k)}</h3>
-                        <p>${v} Item</p>
+    content.innerHTML = `
+        <div class="group-grid">
+            ${Object.entries(map).sort().map(([grup, items]) => `
+                <div class="group-card">
+                    <div class="group-header" onclick="toggleGroup('${grup.replace(/'/g, "\\'")}')">
+                        <h3>🗂️ ${escapeHtml(grup)}</h3>
+                        <span class="group-count">${items.length} item</span>
+                    </div>
+                    <div class="group-items" id="grp-${grup.replace(/[^a-zA-Z0-9]/g, '_')}">
+                        ${items.map(item => `
+                            <div class="group-item">
+                                <div class="group-item-title">${escapeHtml(item.Judul || '-')}</div>
+                                <button class="group-item-copy" onclick='copyItemToClipboard(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+                                    📋 Copy
+                                </button>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
-            `).join("");
-        return;
-    }
-    
-    // Tampilan dashboard & favorit (card view)
+            `).join('')}
+        </div>
+    `;
+}
+
+function renderDashboardView(data) {
     if (data.length === 0) {
         content.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">🔍</div>
-                <h3>Tidak ada data ditemukan</h3>
-                <p>Coba dengan kata kunci atau filter yang berbeda</p>
+            <div class="loading">
+                <p>📭 Tidak ada data yang ditemukan</p>
             </div>
         `;
         return;
     }
     
     content.innerHTML = `
-        <div class="cards-grid">
+        <div class="cards">
             ${data.map(item => `
-                <div class="card template-card">
-                    <div class="card-header">
-                        <h3>${escapeHtml(item.Judul || "Tanpa Judul")}</h3>
-                        ${item.Favorit === "TRUE" ? '<span class="favorit-badge">⭐ Favorit</span>' : ''}
+                <div class="card">
+                    <h3>${escapeHtml(item.Judul || '-')}</h3>
+                    <div class="card-badges">
+                        ${item.Kategori ? `<span class="badge badge-kategori">📁 ${escapeHtml(item.Kategori)}</span>` : ''}
+                        ${item.Grup ? `<span class="badge badge-grup">🗂️ ${escapeHtml(item.Grup)}</span>` : ''}
+                        ${item.Platform ? `<span class="badge badge-platform">💻 ${escapeHtml(item.Platform)}</span>` : ''}
+                        ${item.Status ? `<span class="badge badge-status">📌 ${escapeHtml(item.Status)}</span>` : ''}
+                        ${item.Prioritas ? `<span class="badge badge-prioritas">⚡ ${escapeHtml(item.Prioritas)}</span>` : ''}
                     </div>
-                    <div class="card-meta">
-                        <span class="meta-tag">📁 ${escapeHtml(item.Kategori || "-")}</span>
-                        <span class="meta-tag">🗂️ ${escapeHtml(item.Grup || "-")}</span>
-                        <span class="meta-tag">📱 ${escapeHtml(item.Platform || "-")}</span>
-                        <span class="meta-tag">⚡ ${escapeHtml(item.Prioritas || "-")}</span>
-                        <span class="meta-tag status">${escapeHtml(item.Status || "-")}</span>
+                    <div class="card-desc">
+                        ${item.Pertanyaan ? escapeHtml(item.Pertanyaan.substring(0, 100)) + (item.Pertanyaan.length > 100 ? '...' : '') : ''}
                     </div>
                     <button class="preview-btn" onclick='showModal(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
                         👁️ Preview & Copy
                     </button>
                 </div>
-            `).join("")}
+            `).join('')}
         </div>
     `;
 }
 
-// Show modal dengan detail item
-function showModal(item) {
-    if (!modalBody) return;
-    
-    let html = `
-        <div class="modal-header">
-            <h2>${escapeHtml(item.Judul || "Detail Template")}</h2>
-        </div>
-        <div class="modal-info">
-            <div class="info-row"><strong>Kategori:</strong> ${escapeHtml(item.Kategori || "-")}</div>
-            <div class="info-row"><strong>Grup:</strong> ${escapeHtml(item.Grup || "-")}</div>
-            <div class="info-row"><strong>Status:</strong> ${escapeHtml(item.Status || "-")}</div>
-            <div class="info-row"><strong>Platform:</strong> ${escapeHtml(item.Platform || "-")}</div>
-            <div class="info-row"><strong>Prioritas:</strong> ${escapeHtml(item.Prioritas || "-")}</div>
-        </div>
-        <div class="modal-section">
-            <h3>📌 Pertanyaan</h3>
-            <p>${escapeHtml(item.Pertanyaan || "-")}</p>
-        </div>
-    `;
-    
-    // Jawaban
-    const jawabanKeys = ["Jawaban 1", "Jawaban 2", "Jawaban 3", "Jawaban 4"];
-    jawabanKeys.forEach(key => {
-        if (item[key] && item[key].trim()) {
-            html += `
-                <div class="modal-section answer-section">
-                    <h4>${key}</h4>
-                    <button class="copy-btn" onclick="copyText(\`${escapeHtml(item[key]).replace(/`/g, '\\`')}\`)">
-                        📋 Copy
-                    </button>
-                    <p>${escapeHtml(item[key])}</p>
-                </div>
-            `;
-        }
-    });
-    
-    modalBody.innerHTML = html;
-    modal.style.display = "flex";
-}
-
-// Copy text ke clipboard
-async function copyText(text) {
-    try {
-        await navigator.clipboard.writeText(text);
-        showToast("✓ Berhasil disalin ke clipboard", 1500);
-    } catch (err) {
-        console.error("Copy failed:", err);
-        // Fallback
-        const textarea = document.createElement("textarea");
-        textarea.value = text;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textarea);
-        showToast("✓ Berhasil disalin", 1500);
-    }
-}
-
-// Show toast notification
-function showToast(message, duration = 2000) {
-    let toast = document.querySelector(".toast-notification");
-    if (!toast) {
-        toast = document.createElement("div");
-        toast.className = "toast-notification";
-        document.body.appendChild(toast);
-    }
-    
-    toast.textContent = message;
-    toast.classList.add("show");
-    
-    setTimeout(() => {
-        toast.classList.remove("show");
-    }, duration);
-}
-
-// Toggle theme dark/light
-function toggleTheme() {
-    const body = document.body;
-    const themeToggle = document.getElementById("themeToggle");
-    
-    if (body.classList.contains("dark-theme")) {
-        body.classList.remove("dark-theme");
-        localStorage.setItem("theme", "light");
-        if (themeToggle) themeToggle.textContent = "🌙 Dark Mode";
-    } else {
-        body.classList.add("dark-theme");
-        localStorage.setItem("theme", "dark");
-        if (themeToggle) themeToggle.textContent = "☀️ Light Mode";
-    }
-}
-
-// Toggle sidebar collapse
-function toggleSidebar() {
-    const sidebar = document.querySelector(".sidebar");
-    const main = document.querySelector(".main");
-    
-    if (sidebar && main) {
-        sidebar.classList.toggle("collapsed");
-        main.classList.toggle("expanded");
-        
-        // Save state
-        const isCollapsed = sidebar.classList.contains("collapsed");
-        localStorage.setItem("sidebarCollapsed", isCollapsed);
-    }
-}
-
-// Load saved preferences
-function loadPreferences() {
-    // Theme
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-        document.body.classList.add("dark-theme");
-        const themeToggle = document.getElementById("themeToggle");
-        if (themeToggle) themeToggle.textContent = "☀️ Light Mode";
-    }
-    
-    // Sidebar state
-    const sidebarCollapsed = localStorage.getItem("sidebarCollapsed") === "true";
-    if (sidebarCollapsed) {
-        const sidebar = document.querySelector(".sidebar");
-        const main = document.querySelector(".main");
-        if (sidebar && main) {
-            sidebar.classList.add("collapsed");
-            main.classList.add("expanded");
-        }
-    }
-}
-
-// Export functions untuk global access
-window.showModal = showModal;
-window.copyText = copyText;
-
-// Load preferences saat startup
-loadPreferences();
+// Global functions for onclick
+window.toggleCategory = function(id) {
+    const element = document.getElementById(`cat-${id.replace(/[^a-zA-Z0-9]/g, '_')}`);
+    if (element) element.classList.toggle
