@@ -3,124 +3,116 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyrznbrQDzNXiPc0fJ0fXxC
 let allData = [];
 let currentView = "dashboard";
 let isLoading = false;
+let lastUpdateTime = null;
 
-// Cache keys
-const CACHE_KEY = 'minics_data';
-const CACHE_TIME_KEY = 'minics_timestamp';
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+// DOM Elements
+const content = document.getElementById("content");
+const searchInput = document.getElementById("searchInput");
+const searchClear = document.getElementById("searchClear");
+const kategoriFilter = document.getElementById("kategoriFilter");
+const grupFilter = document.getElementById("grupFilter");
+const statusFilter = document.getElementById("statusFilter");
+const platformFilter = document.getElementById("platformFilter");
+const prioritasFilter = document.getElementById("prioritasFilter");
+const modal = document.getElementById("modal");
+const modalBody = document.getElementById("modalBody");
+const modalTitle = document.getElementById("modalTitle");
+const loadingOverlay = document.getElementById("loadingOverlay");
+const lastUpdateSpan = document.getElementById("lastUpdate");
+const toast = document.getElementById("toast");
+const refreshBtn = document.getElementById("refreshBtn");
+const themeToggle = document.getElementById("themeToggle");
+const menuToggle = document.getElementById("menuToggle");
+const sidebar = document.getElementById("sidebar");
+const mobileOverlay = document.getElementById("mobileOverlay");
+const sidebarClose = document.getElementById("sidebarClose");
+const filterToggle = document.getElementById("filterToggle");
+const filterSection = document.querySelector(".filter-section");
 
-// Load data with cache
-async function loadData(forceRefresh = false) {
+// Show toast notification
+function showToast(message, isError = false) {
+    toast.textContent = message;
+    if (isError) {
+        toast.style.background = "var(--danger)";
+    } else {
+        toast.style.background = "var(--success)";
+    }
+    toast.classList.add("show");
+    setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => {
+            toast.style.background = "var(--success)";
+        }, 300);
+    }, 2500);
+}
+
+// Show/hide loading
+function setLoading(loading) {
+    isLoading = loading;
+    loadingOverlay.style.display = loading ? "flex" : "none";
+}
+
+// Load data from API
+async function loadData(showLoading = true) {
     if (isLoading) return;
     
-    // Check cache
-    if (!forceRefresh) {
-        const cached = localStorage.getItem(CACHE_KEY);
-        const timestamp = localStorage.getItem(CACHE_TIME_KEY);
-        
-        if (cached && timestamp && (Date.now() - parseInt(timestamp)) < CACHE_DURATION) {
-            allData = JSON.parse(cached);
-            renderAll();
-            showNotification('Data loaded from cache', 'info');
-            return;
-        }
-    }
-    
-    isLoading = true;
-    showLoading();
+    if (showLoading) setLoading(true);
     
     try {
         const res = await fetch(API_URL);
         const json = await res.json();
         allData = json.data || [];
+        lastUpdateTime = new Date();
+        updateLastUpdateTime();
         
-        // Save to cache
-        localStorage.setItem(CACHE_KEY, JSON.stringify(allData));
-        localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+        renderStats();
+        populateFilters();
+        renderContent();
         
-        renderAll();
-        showNotification('Data refreshed successfully', 'success');
-    } catch(err) {
+        showToast("Data berhasil diperbarui");
+    } catch (err) {
         console.error(err);
-        showNotification('Failed to load data', 'error');
-        
-        // Try to load from cache if available
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (cached) {
-            allData = JSON.parse(cached);
-            renderAll();
-            showNotification('Using cached data', 'warning');
-        }
+        showToast("Gagal memuat data", true);
     } finally {
-        isLoading = false;
-        hideLoading();
+        if (showLoading) setLoading(false);
     }
 }
 
-function showLoading() {
-    const content = document.getElementById('content');
-    if (content) content.innerHTML = '<div class="loading">Loading data</div>';
+// Update last update time display
+function updateLastUpdateTime() {
+    if (lastUpdateTime) {
+        const formatted = lastUpdateTime.toLocaleTimeString("id-ID");
+        lastUpdateSpan.textContent = `Terakhir: ${formatted}`;
+    }
 }
 
-function hideLoading() {
-    // handled by render
-}
-
-function showNotification(message, type = 'info') {
-    // Simple toast notification
-    const toast = document.createElement('div');
-    toast.textContent = message;
-    toast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-        color: white;
-        border-radius: 8px;
-        z-index: 2000;
-        animation: slideIn 0.3s ease;
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
-
+// Get unique values from field
 function unique(field) {
     return [...new Set(allData.map(x => x[field]).filter(Boolean))].sort();
 }
 
+// Populate filter dropdowns
 function populateFilters() {
-    fillSelect("kategoriFilter", "Kategori");
-    fillSelect("grupFilter", "Grup");
-    fillSelect("statusFilter", "Status");
-    fillSelect("platformFilter", "Platform");
-    fillSelect("prioritasFilter", "Prioritas");
+    fillSelect(kategoriFilter, "Kategori", "Semua Kategori");
+    fillSelect(grupFilter, "Grup", "Semua Grup");
+    fillSelect(statusFilter, "Status", "Semua Status");
+    fillSelect(platformFilter, "Platform", "Semua Platform");
+    fillSelect(prioritasFilter, "Prioritas", "Semua Prioritas");
 }
 
-function fillSelect(id, key) {
-    const select = document.getElementById(id);
-    if (!select) return;
-    
-    const current = select.value;
-    select.innerHTML = `<option value="">Semua ${key}</option>`;
-    
+function fillSelect(selectElement, key, defaultText) {
+    const current = selectElement.value;
+    selectElement.innerHTML = `<option value="">${defaultText}</option>`;
     unique(key).forEach(item => {
-        select.innerHTML += `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`;
+        const option = document.createElement("option");
+        option.value = item;
+        option.textContent = item;
+        selectElement.appendChild(option);
     });
-    
-    select.value = current;
+    selectElement.value = current;
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-    });
-}
-
+// Render stats cards
 function renderStats() {
     const totalData = allData.length;
     const totalKategori = unique("Kategori").length;
@@ -128,275 +120,308 @@ function renderStats() {
     const totalPlatform = unique("Platform").length;
     const totalFavorit = allData.filter(x => String(x.Favorit).toUpperCase() === "TRUE").length;
 
-    const statsHtml = `
+    document.getElementById("stats").innerHTML = `
         <div class="stat-card">
-            <h2>${totalData}</h2>
+            <h2>${totalData.toLocaleString()}</h2>
             <p>Total Data</p>
         </div>
         <div class="stat-card">
             <h2>${totalKategori}</h2>
-            <p>Total Kategori</p>
+            <p>Kategori</p>
         </div>
         <div class="stat-card">
             <h2>${totalGrup}</h2>
-            <p>Total Grup</p>
+            <p>Grup</p>
         </div>
         <div class="stat-card">
             <h2>${totalPlatform}</h2>
-            <p>Total Platform</p>
+            <p>Platform</p>
         </div>
         <div class="stat-card">
             <h2>${totalFavorit}</h2>
-            <p>Total Favorit</p>
+            <p>Favorit</p>
         </div>
     `;
-    
-    const statsContainer = document.getElementById("stats");
-    if (statsContainer) statsContainer.innerHTML = statsHtml;
 }
 
+// Filter data based on search and filters
 function filterData() {
-    const search = document.getElementById("searchInput")?.value.toLowerCase() || "";
-    const kategoriFilter = document.getElementById("kategoriFilter");
-    const grupFilter = document.getElementById("grupFilter");
-    const statusFilter = document.getElementById("statusFilter");
-    const platformFilter = document.getElementById("platformFilter");
-    const prioritasFilter = document.getElementById("prioritasFilter");
+    const searchTerm = searchInput.value.toLowerCase().trim();
     
     return allData.filter(item => {
-        // Enhanced search across all fields
-        if (search) {
-            const searchableFields = [
-                item.Judul, item.Kategori, item.Grup, item.Platform,
-                item.Pertanyaan, item["Jawaban 1"], item["Jawaban 2"],
-                item["Jawaban 3"], item["Jawaban 4"], item.Status, item.Prioritas
+        // Search across all fields
+        if (searchTerm) {
+            const searchableText = [
+                item.Judul,
+                item.Kategori,
+                item.Grup,
+                item.Platform,
+                item.Pertanyaan,
+                item["Jawaban 1"],
+                item["Jawaban 2"],
+                item["Jawaban 3"],
+                item["Jawaban 4"],
+                item.Status,
+                item.Prioritas
             ].filter(Boolean).join(" ").toLowerCase();
             
-            if (!searchableFields.includes(search)) return false;
+            if (!searchableText.includes(searchTerm)) return false;
         }
         
-        if (kategoriFilter?.value && item.Kategori !== kategoriFilter.value) return false;
-        if (grupFilter?.value && item.Grup !== grupFilter.value) return false;
-        if (statusFilter?.value && item.Status !== statusFilter.value) return false;
-        if (platformFilter?.value && item.Platform !== platformFilter.value) return false;
-        if (prioritasFilter?.value && item.Prioritas !== prioritasFilter.value) return false;
+        // Apply filters
+        if (kategoriFilter.value && item.Kategori !== kategoriFilter.value) return false;
+        if (grupFilter.value && item.Grup !== grupFilter.value) return false;
+        if (statusFilter.value && item.Status !== statusFilter.value) return false;
+        if (platformFilter.value && item.Platform !== platformFilter.value) return false;
+        if (prioritasFilter.value && item.Prioritas !== prioritasFilter.value) return false;
         
+        // Favorit view filter
         if (currentView === "favorit" && String(item.Favorit).toUpperCase() !== "TRUE") return false;
         
         return true;
     });
 }
 
+// Render main content based on current view
 function renderContent() {
-    const data = filterData();
-    const content = document.getElementById("content");
-    if (!content) return;
+    let data = filterData();
+    
+    if (data.length === 0) {
+        content.innerHTML = `
+            <div class="empty-state">
+                <span>🔍</span>
+                <p>Tidak ada data yang ditemukan</p>
+            </div>
+        `;
+        return;
+    }
     
     if (currentView === "kategori") {
         const map = {};
         data.forEach(item => {
-            map[item.Kategori] = (map[item.Kategori] || 0) + 1;
+            const key = item.Kategori || "Tidak Berkategori";
+            map[key] = (map[key] || 0) + 1;
         });
         
-        content.innerHTML = Object.entries(map)
-            .map(([k, v]) => `
-                <div class="card">
-                    <h3>📁 ${escapeHtml(k) || 'Tanpa Kategori'}</h3>
-                    <p>${v} Item</p>
-                </div>
-            `).join("");
+        content.innerHTML = `
+            <div class="cards">
+                ${Object.entries(map).sort((a,b) => b[1] - a[1]).map(([k, v]) => `
+                    <div class="card" onclick="filterByKategori('${k.replace(/'/g, "\\'")}')">
+                        <h3>📂 ${k}</h3>
+                        <p>${v} item</p>
+                    </div>
+                `).join("")}
+            </div>
+        `;
         return;
     }
     
     if (currentView === "grup") {
         const map = {};
         data.forEach(item => {
-            map[item.Grup] = (map[item.Grup] || 0) + 1;
+            const key = item.Grup || "Tidak Bergrup";
+            map[key] = (map[key] || 0) + 1;
         });
         
-        content.innerHTML = Object.entries(map)
-            .map(([k, v]) => `
-                <div class="card">
-                    <h3>🗂️ ${escapeHtml(k) || 'Tanpa Grup'}</h3>
-                    <p>${v} Item</p>
-                </div>
-            `).join("");
+        content.innerHTML = `
+            <div class="cards">
+                ${Object.entries(map).sort((a,b) => b[1] - a[1]).map(([k, v]) => `
+                    <div class="card" onclick="filterByGrup('${k.replace(/'/g, "\\'")}')">
+                        <h3>🗂 ${k}</h3>
+                        <p>${v} item</p>
+                    </div>
+                `).join("")}
+            </div>
+        `;
         return;
     }
     
-    // Dashboard view
-    content.innerHTML = `<div class="cards">` +
-        data.map(item => `
-            <div class="card">
-                <h3>${escapeHtml(item.Judul) || '-'}</h3>
-                <div class="card-badges">
-                    <span class="badge">📁 ${escapeHtml(item.Kategori) || '-'}</span>
-                    <span class="badge">🗂️ ${escapeHtml(item.Grup) || '-'}</span>
-                    <span class="badge">💻 ${escapeHtml(item.Platform) || '-'}</span>
-                    ${item.Favorit === 'TRUE' ? '<span class="badge">⭐ Favorit</span>' : ''}
+    // Dashboard view (default)
+    content.innerHTML = `
+        <div class="cards">
+            ${data.map(item => `
+                <div class="card">
+                    <h3>${escapeHtml(item.Judul || "-")}</h3>
+                    <div class="card-meta">
+                        <span class="meta-tag">📂 ${escapeHtml(item.Kategori || "-")}</span>
+                        <span class="meta-tag">🗂 ${escapeHtml(item.Grup || "-")}</span>
+                        <span class="meta-tag">🖥 ${escapeHtml(item.Platform || "-")}</span>
+                        ${item.Status ? `<span class="meta-tag">📌 ${escapeHtml(item.Status)}</span>` : ""}
+                        ${String(item.Favorit).toUpperCase() === "TRUE" ? '<span class="meta-tag">⭐ Favorit</span>' : ""}
+                    </div>
+                    <button class="preview-btn" onclick='showModal(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
+                        👁 Preview & Copy
+                    </button>
                 </div>
-                <button class="preview-btn" onclick='showModal(${JSON.stringify(item).replace(/'/g, "&#39;")})'>
-                    👁️ Preview & Copy
-                </button>
-            </div>
-        `).join("") + `</div>`;
+            `).join("")}
+        </div>
+    `;
 }
 
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    if (!text) return "";
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Filter by kategori from card click
+function filterByKategori(kategori) {
+    kategoriFilter.value = kategori;
+    currentView = "dashboard";
+    document.querySelectorAll(".menu-btn").forEach(btn => {
+        btn.classList.remove("active");
+        if (btn.dataset.view === "dashboard") btn.classList.add("active");
+    });
+    renderContent();
+}
+
+// Filter by grup from card click
+function filterByGrup(grup) {
+    grupFilter.value = grup;
+    currentView = "dashboard";
+    document.querySelectorAll(".menu-btn").forEach(btn => {
+        btn.classList.remove("active");
+        if (btn.dataset.view === "dashboard") btn.classList.add("active");
+    });
+    renderContent();
+}
+
+// Show modal with item details
 function showModal(item) {
-    const body = document.getElementById("modalBody");
-    if (!body) return;
+    modalTitle.textContent = item.Judul || "Detail";
     
     let html = `
-        <h2>📄 ${escapeHtml(item.Judul) || ''}</h2>
-        <hr style="margin: 15px 0; border-color: var(--border);">
-        <p><strong>📁 Kategori:</strong> ${escapeHtml(item.Kategori) || '-'}</p>
-        <p><strong>🗂️ Grup:</strong> ${escapeHtml(item.Grup) || '-'}</p>
-        <p><strong>📌 Status:</strong> ${escapeHtml(item.Status) || '-'}</p>
-        <p><strong>💻 Platform:</strong> ${escapeHtml(item.Platform) || '-'}</p>
-        <p><strong>⚡ Prioritas:</strong> ${escapeHtml(item.Prioritas) || '-'}</p>
-        ${item.Favorit === 'TRUE' ? '<p><strong>⭐ Favorit:</strong> Ya</p>' : ''}
-        <hr style="margin: 15px 0; border-color: var(--border);">
-        <p><strong>❓ Pertanyaan:</strong></p>
-        <p style="background: var(--bg-primary); padding: 10px; border-radius: 8px; margin: 10px 0;">${escapeHtml(item.Pertanyaan) || '-'}</p>
+        <div style="margin-bottom: 20px;">
+            <p><strong>📂 Kategori:</strong> ${escapeHtml(item.Kategori) || "-"}</p>
+            <p><strong>🗂 Grup:</strong> ${escapeHtml(item.Grup) || "-"}</p>
+            <p><strong>📌 Status:</strong> ${escapeHtml(item.Status) || "-"}</p>
+            <p><strong>🖥 Platform:</strong> ${escapeHtml(item.Platform) || "-"}</p>
+            <p><strong>⚠️ Prioritas:</strong> ${escapeHtml(item.Prioritas) || "-"}</p>
+            ${String(item.Favorit).toUpperCase() === "TRUE" ? '<p><strong>⭐ Favorit:</strong> Ya</p>' : ""}
+        </div>
     `;
+    
+    if (item.Pertanyaan) {
+        html += `
+            <div style="margin-bottom: 20px;">
+                <h4>❓ Pertanyaan</h4>
+                <p>${escapeHtml(item.Pertanyaan)}</p>
+            </div>
+        `;
+    }
     
     ["Jawaban 1", "Jawaban 2", "Jawaban 3", "Jawaban 4"].forEach(key => {
         if (item[key]) {
             html += `
-                <hr style="margin: 15px 0; border-color: var(--border);">
-                <h4>📝 ${key}</h4>
-                <button class="copy-btn" onclick="copyText(\`${escapeHtml(item[key]).replace(/`/g, '\\`')}\`)">
-                    📋 Copy
-                </button>
-                <p style="background: var(--bg-primary); padding: 10px; border-radius: 8px; margin-top: 10px;">${escapeHtml(item[key])}</p>
+                <div style="margin-bottom: 16px;">
+                    <h4>📝 ${key}</h4>
+                    <button class="copy-btn" onclick="copyText('${escapeHtml(item[key]).replace(/'/g, "\\'")}')">
+                        📋 Copy
+                    </button>
+                    <p>${escapeHtml(item[key])}</p>
+                </div>
             `;
         }
     });
     
-    body.innerHTML = html;
-    document.getElementById("modal").style.display = "flex";
+    modalBody.innerHTML = html;
+    modal.style.display = "flex";
 }
 
+// Copy text to clipboard
 function copyText(text) {
     navigator.clipboard.writeText(text).then(() => {
-        showNotification('Berhasil disalin!', 'success');
+        showToast("Berhasil disalin ke clipboard!");
     }).catch(() => {
-        showNotification('Gagal menyalin', 'error');
+        showToast("Gagal menyalin", true);
     });
 }
 
-function renderAll() {
-    renderStats();
-    populateFilters();
+// Close modal
+document.getElementById("closeModal").onclick = () => {
+    modal.style.display = "none";
+};
+
+window.onclick = (e) => {
+    if (e.target === modal) modal.style.display = "none";
+};
+
+// Search clear button
+searchInput.addEventListener("input", () => {
+    searchClear.style.display = searchInput.value ? "block" : "none";
     renderContent();
+});
+
+searchClear.addEventListener("click", () => {
+    searchInput.value = "";
+    searchClear.style.display = "none";
+    renderContent();
+});
+
+// Filter change listeners
+[kategoriFilter, grupFilter, statusFilter, platformFilter, prioritasFilter].forEach(select => {
+    select.addEventListener("change", renderContent);
+});
+
+// Menu navigation
+document.querySelectorAll(".menu-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".menu-btn").forEach(x => x.classList.remove("active"));
+        btn.classList.add("active");
+        currentView = btn.dataset.view;
+        renderContent();
+    });
+});
+
+// Refresh button
+refreshBtn.addEventListener("click", () => {
+    loadData(true);
+});
+
+// Theme toggle
+function initTheme() {
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    document.body.setAttribute("data-theme", savedTheme);
+    themeToggle.textContent = savedTheme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
 }
 
-// Event Listeners
-function initEventListeners() {
-    // Menu navigation
-    document.querySelectorAll(".menu-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            document.querySelectorAll(".menu-btn").forEach(x => x.classList.remove("active"));
-            btn.classList.add("active");
-            currentView = btn.dataset.view;
-            renderContent();
-        });
-    });
-    
-    // Filters
-    document.querySelectorAll("select").forEach(select => {
-        select.addEventListener("change", () => renderContent());
-    });
-    
-    // Search
-    const searchInput = document.getElementById("searchInput");
-    const clearSearch = document.getElementById("clearSearch");
-    
-    if (searchInput) {
-        searchInput.addEventListener("input", () => {
-            renderContent();
-            if (clearSearch) {
-                clearSearch.classList.toggle("visible", searchInput.value.length > 0);
-            }
-        });
-    }
-    
-    if (clearSearch) {
-        clearSearch.addEventListener("click", () => {
-            if (searchInput) {
-                searchInput.value = "";
-                renderContent();
-                clearSearch.classList.remove("visible");
-            }
-        });
-    }
-    
-    // Refresh button
-    const refreshBtn = document.getElementById("refreshBtn");
-    if (refreshBtn) {
-        refreshBtn.addEventListener("click", () => loadData(true));
-    }
-    
-    // Modal close
-    const closeModal = document.getElementById("closeModal");
-    const modal = document.getElementById("modal");
-    
-    if (closeModal) {
-        closeModal.onclick = () => modal.style.display = "none";
-    }
-    
-    window.onclick = (e) => {
-        if (e.target === modal) modal.style.display = "none";
-    };
-    
-    // Collapse sidebar
-    const collapseBtn = document.getElementById("collapseBtn");
-    const sidebar = document.getElementById("sidebar");
-    const main = document.querySelector(".main");
-    
-    if (collapseBtn && sidebar && main) {
-        collapseBtn.addEventListener("click", () => {
-            sidebar.classList.toggle("collapsed");
-            main.classList.toggle("expanded");
-        });
-    }
-    
-    // Filter toggles
-    document.querySelectorAll(".filter-toggle").forEach(toggle => {
-        toggle.addEventListener("click", () => {
-            const content = toggle.parentElement.querySelector(".filter-content");
-            if (content) {
-                content.classList.toggle("active");
-                toggle.textContent = toggle.textContent.includes("▼") 
-                    ? toggle.textContent.replace("▼", "▲") 
-                    : toggle.textContent.replace("▲", "▼");
-            }
-        });
-    });
-    
-    // Theme toggle
-    const themeToggle = document.getElementById("themeToggle");
-    if (themeToggle) {
-        themeToggle.addEventListener("click", () => {
-            document.body.classList.toggle("light");
-            themeToggle.textContent = document.body.classList.contains("light") ? "☀️" : "🌙";
-            localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
-        });
-        
-        // Load saved theme
-        const savedTheme = localStorage.getItem("theme");
-        if (savedTheme === "light") {
-            document.body.classList.add("light");
-            themeToggle.textContent = "☀️";
-        }
-    }
-}
+themeToggle.addEventListener("click", () => {
+    const currentTheme = document.body.getAttribute("data-theme");
+    const newTheme = currentTheme === "dark" ? "light" : "dark";
+    document.body.setAttribute("data-theme", newTheme);
+    localStorage.setItem("theme", newTheme);
+    themeToggle.textContent = newTheme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
+});
+
+// Mobile menu
+menuToggle.addEventListener("click", () => {
+    sidebar.classList.add("open");
+    mobileOverlay.classList.add("open");
+});
+
+sidebarClose.addEventListener("click", () => {
+    sidebar.classList.remove("open");
+    mobileOverlay.classList.remove("open");
+});
+
+mobileOverlay.addEventListener("click", () => {
+    sidebar.classList.remove("open");
+    mobileOverlay.classList.remove("open");
+});
+
+// Filter collapsible
+filterToggle.addEventListener("click", () => {
+    filterSection.classList.toggle("collapsed");
+});
+
+// Make functions global for onclick
+window.showModal = showModal;
+window.copyText = copyText;
+window.filterByKategori = filterByKategori;
+window.filterByGrup = filterByGrup;
 
 // Initialize
-function init() {
-    initEventListeners();
-    loadData();
-}
-
-// Start app
-init();
+initTheme();
+loadData(true);
