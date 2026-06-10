@@ -3,84 +3,120 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Mini CS</title>
-
+<title>Mini CS - Knowledge Base System</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
 
-<div class="layout">
-
-    <aside class="sidebar">
-
-        <h1>Mini CS</h1>
-
-        <nav>
-            <button class="menu-btn active" data-view="dashboard">📊 Dashboard</button>
-            <button class="menu-btn" data-view="kategori">📂 Kategori</button>
-            <button class="menu-btn" data-view="grup">🗂 Grup</button>
-            <button class="menu-btn" data-view="favorit">⭐ Favorit</button>
-        </nav>
-
-    </aside>
-
-    <main class="main">
-
-        <div class="topbar">
-
-            <input
-                id="searchInput"
-                type="text"
-                placeholder="Cari template..."
-            >
-
+<div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h1>📚 Mini CS</h1>
+            <button class="collapse-btn" id="collapseBtn">☰</button>
         </div>
 
-        <section id="stats" class="stats"></section>
+        <nav class="nav-menu">
+            <button class="menu-btn active" data-view="dashboard">
+                <span>📊</span> Dashboard
+            </button>
+            <button class="menu-btn" data-view="kategori">
+                <span>📂</span> Kategori
+            </button>
+            <button class="menu-btn" data-view="grup">
+                <span>🗂️</span> Grup
+            </button>
+            <button class="menu-btn" data-view="favorit">
+                <span>⭐</span> Favorit
+            </button>
+        </nav>
 
-        <section class="filters">
+        <!-- Filter Panel -->
+        <div class="filter-panel">
+            <h3>🔍 Filter Data</h3>
+            
+            <div class="filter-group">
+                <button class="filter-toggle">📁 Kategori ▼</button>
+                <div class="filter-content">
+                    <select id="kategoriFilter">
+                        <option value="">Semua Kategori</option>
+                    </select>
+                </div>
+            </div>
 
-            <select id="kategoriFilter">
-                <option value="">Semua Kategori</option>
-            </select>
+            <div class="filter-group">
+                <button class="filter-toggle">🗂️ Grup ▼</button>
+                <div class="filter-content">
+                    <select id="grupFilter">
+                        <option value="">Semua Grup</option>
+                    </select>
+                </div>
+            </div>
 
-            <select id="grupFilter">
-                <option value="">Semua Grup</option>
-            </select>
+            <div class="filter-group">
+                <button class="filter-toggle">📌 Status ▼</button>
+                <div class="filter-content">
+                    <select id="statusFilter">
+                        <option value="">Semua Status</option>
+                    </select>
+                </div>
+            </div>
 
-            <select id="statusFilter">
-                <option value="">Semua Status</option>
-            </select>
+            <div class="filter-group">
+                <button class="filter-toggle">💻 Platform ▼</button>
+                <div class="filter-content">
+                    <select id="platformFilter">
+                        <option value="">Semua Platform</option>
+                    </select>
+                </div>
+            </div>
 
-            <select id="platformFilter">
-                <option value="">Semua Platform</option>
-            </select>
+            <div class="filter-group">
+                <button class="filter-toggle">⚡ Prioritas ▼</button>
+                <div class="filter-content">
+                    <select id="prioritasFilter">
+                        <option value="">Semua Prioritas</option>
+                    </select>
+                </div>
+            </div>
+        </div>
 
-            <select id="prioritasFilter">
-                <option value="">Semua Prioritas</option>
-            </select>
+        <div class="sidebar-footer">
+            <button class="refresh-btn" id="refreshBtn">🔄 Refresh Data</button>
+        </div>
+    </aside>
 
-        </section>
+    <!-- Main Content -->
+    <main class="main">
+        <div class="topbar">
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input 
+                    id="searchInput" 
+                    type="text" 
+                    placeholder="Cari berdasarkan judul, kategori, grup, pertanyaan, jawaban..."
+                >
+                <button class="clear-search" id="clearSearch">✕</button>
+            </div>
+            <button class="theme-toggle" id="themeToggle">🌙</button>
+        </div>
 
-        <section id="content"></section>
+        <div class="stats-container">
+            <section id="stats" class="stats"></section>
+        </div>
 
+        <section id="content" class="content-area"></section>
     </main>
-
 </div>
 
+<!-- Modal -->
 <div id="modal" class="modal">
     <div class="modal-content">
-
         <span id="closeModal">&times;</span>
-
         <div id="modalBody"></div>
-
     </div>
 </div>
 
 <script src="js/App.js"></script>
-
 </body>
 </html>
