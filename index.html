@@ -1,36 +1,69 @@
 <!DOCTYPE html>
+
 <html lang="id">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Mini CS</title>
+<title>Online CS Pro</title>
 
 <link rel="stylesheet" href="css/style.css">
+
 </head>
 
 <body>
 
 <div class="layout">
 
-   <aside class="sidebar" id="sidebar">
+```
+<aside class="sidebar" id="sidebar">
 
-        <h1 class="logo">
-📋 Online CS Pro
-</h1>
+    <h1 class="logo">
+        📋 Online CS Pro
+    </h1>
 
-        <nav>
-            <button class="menu-btn active" data-view="dashboard">📊 Dashboard</button>
-            <button class="menu-btn" data-view="kategori">📂 Kategori</button>
-            <button class="menu-btn" data-view="grup">🗂 Grup</button>
-            <button class="menu-btn" data-view="favorit">⭐ Favorit</button>
-        </nav>
+    <nav>
 
-    </aside>
+        <button
+            class="menu-btn active"
+            data-view="dashboard">
+            📊 Dashboard
+        </button>
 
-    <main class="main">
+        <button
+            class="menu-btn"
+            data-view="kategori">
+            📂 Kategori
+        </button>
 
-        <div class="topbar">
+        <button
+            class="menu-btn"
+            data-view="grup">
+            🗂 Grup
+        </button>
+
+        <button
+            class="menu-btn"
+            data-view="favorit">
+            ⭐ Favorit
+        </button>
+
+    </nav>
+
+</aside>
+
+<main class="main">
+
+    <div class="topbar">
+
+        <div class="topbar-left">
+
+            <button
+                id="toggleSidebar"
+                class="icon-btn">
+                ☰
+            </button>
 
             <input
                 id="searchInput"
@@ -40,47 +73,76 @@
 
         </div>
 
-        <section id="stats" class="stats"></section>
+        <button
+            id="themeToggle"
+            class="icon-btn">
+            🌙
+        </button>
 
-        <section class="filters">
+    </div>
 
-            <select id="kategoriFilter">
-                <option value="">Semua Kategori</option>
-            </select>
+    <section
+        id="stats"
+        class="stats">
+    </section>
 
-            <select id="grupFilter">
-                <option value="">Semua Grup</option>
-            </select>
+    <section class="filters">
 
-            <select id="statusFilter">
-                <option value="">Semua Status</option>
-            </select>
+        <select id="kategoriFilter">
+            <option value="">
+                Semua Kategori
+            </option>
+        </select>
 
-            <select id="platformFilter">
-                <option value="">Semua Platform</option>
-            </select>
+        <select id="grupFilter">
+            <option value="">
+                Semua Grup
+            </option>
+        </select>
 
-            <select id="prioritasFilter">
-                <option value="">Semua Prioritas</option>
-            </select>
+        <select id="statusFilter">
+            <option value="">
+                Semua Status
+            </option>
+        </select>
 
-        </section>
+        <select id="platformFilter">
+            <option value="">
+                Semua Platform
+            </option>
+        </select>
 
-        <section id="content"></section>
+        <select id="prioritasFilter">
+            <option value="">
+                Semua Prioritas
+            </option>
+        </select>
 
-    </main>
+    </section>
+
+    <section id="content"></section>
+
+</main>
+```
 
 </div>
 
 <div id="modal" class="modal">
-    <div class="modal-content">
 
-        <span id="closeModal">&times;</span>
+```
+<div class="modal-content">
 
-        <div id="modalBody"></div>
+    <span id="closeModal">
+        &times;
+    </span>
 
-    </div>
+    <div id="modalBody"></div>
+
 </div>
+```
+
+</div>
+
 <script>
 
 const sidebar =
@@ -89,35 +151,44 @@ document.getElementById("sidebar");
 const toggleSidebar =
 document.getElementById("toggleSidebar");
 
-toggleSidebar.onclick = () => {
+if(toggleSidebar){
 
-sidebar.classList.toggle("collapsed");
+    toggleSidebar.addEventListener("click",()=>{
 
-};
+        sidebar.classList.toggle("collapsed");
+
+    });
+
+}
 
 const themeToggle =
 document.getElementById("themeToggle");
 
-themeToggle.onclick = () => {
+if(themeToggle){
 
-document.body.classList.toggle("light");
+    themeToggle.addEventListener("click",()=>{
 
-localStorage.setItem(
-"theme",
-document.body.classList.contains("light")
-? "light"
-: "dark"
-);
+        document.body.classList.toggle("light");
 
-};
+        localStorage.setItem(
+            "theme",
+            document.body.classList.contains("light")
+            ? "light"
+            : "dark"
+        );
+
+    });
+
+}
 
 if(localStorage.getItem("theme")==="light"){
 
-document.body.classList.add("light");
+    document.body.classList.add("light");
 
 }
 
 </script>
+
 <script src="js/App.js"></script>
 
 </body>
