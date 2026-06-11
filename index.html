@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>CS Multi Platform</title>
+    <title>Creator Vault - Knowledge Hub</title>
     <style>
         * {
             margin: 0;
@@ -25,6 +25,9 @@
             --search-bg: #ffffff;
             --hover-bg: #f5f5f5;
             --card-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            --context-bg: #ffffff;
+            --context-text: #1a1a2e;
+            --context-hover: #f0f2f5;
         }
 
         body.dark {
@@ -40,6 +43,9 @@
             --search-bg: #2a2a2a;
             --hover-bg: #2a2a2a;
             --card-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            --context-bg: #2a2a2a;
+            --context-text: #ffffff;
+            --context-hover: #3a3a3a;
         }
 
         body {
@@ -266,7 +272,7 @@
             color: var(--accent);
         }
 
-        /* Chat Container */
+        /* Chat/Message Container */
         .chat-container {
             flex: 1;
             overflow-y: auto;
@@ -277,7 +283,7 @@
             display: flex;
             margin-bottom: 16px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
             padding: 12px;
             border-radius: 16px;
             background: var(--bg-secondary);
@@ -332,16 +338,78 @@
             line-height: 1.4;
         }
 
-        /* Context Menu (Copy Popup) */
+        /* Table View untuk Sheet Data */
+        .sheet-view {
+            padding: 20px;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .data-table th {
+            background: var(--accent);
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        .data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            vertical-align: top;
+        }
+        
+        .data-table tr:hover td {
+            background: var(--hover-bg);
+        }
+        
+        .copyable-cell {
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .copyable-cell:hover {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .copy-badge {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+            opacity: 0.7;
+        }
+        
+        .copyable-cell:hover .copy-badge {
+            opacity: 1;
+            background: white;
+            color: var(--accent);
+        }
+
+        /* Context Menu (Copy Popup) - Fixed for dark mode */
         .context-menu {
             position: fixed;
-            background: var(--bg-secondary);
+            background: var(--context-bg);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
             z-index: 3000;
             overflow: hidden;
-            min-width: 180px;
+            min-width: 200px;
         }
 
         .context-menu-item {
@@ -352,16 +420,11 @@
             align-items: center;
             gap: 10px;
             font-size: 14px;
+            color: var(--context-text);
         }
 
         .context-menu-item:hover {
-            background: var(--hover-bg);
-        }
-
-        .context-menu-divider {
-            height: 1px;
-            background: var(--border-color);
-            margin: 4px 0;
+            background: var(--context-hover);
         }
 
         /* Modal */
@@ -409,13 +472,7 @@
         .detail-row {
             padding: 12px 0;
             border-bottom: 1px solid var(--border-color);
-            cursor: pointer;
-            transition: background 0.2s;
             border-radius: 8px;
-        }
-
-        .detail-row:hover {
-            background: var(--hover-bg);
         }
 
         .detail-label {
@@ -430,16 +487,17 @@
             word-break: break-word;
             line-height: 1.5;
         }
-
-        .detail-value pre {
-            background: var(--bg-primary);
-            padding: 12px;
+        
+        .detail-value.copyable-val {
+            cursor: pointer;
+            padding: 8px 12px;
             border-radius: 12px;
-            overflow-x: auto;
-            font-family: monospace;
-            font-size: 13px;
-            margin-top: 6px;
-            white-space: pre-wrap;
+            transition: all 0.2s;
+        }
+        
+        .detail-value.copyable-val:hover {
+            background: var(--accent);
+            color: white;
         }
 
         /* Loading & Empty */
@@ -483,6 +541,20 @@
             85% { opacity: 1; transform: translateX(-50%) translateY(0); }
             100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
         }
+        
+        .btn-back {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+        
+        .btn-back:hover {
+            background: var(--hover-bg);
+        }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -493,6 +565,7 @@
             .main { margin-left: 0; }
             .stats-grid { grid-template-columns: 1fr; }
             .message-avatar { width: 40px; height: 40px; font-size: 16px; }
+            .data-table th, .data-table td { padding: 8px 12px; }
         }
     </style>
 </head>
@@ -504,7 +577,7 @@
 <div style="display: flex; min-height: 100vh;">
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <span>🏦 CS Multi Platform</span>
+            <span>🏦 Creator Vault</span>
             <span style="font-size: 11px; opacity:0.5;">v3.0</span>
         </div>
         <ul class="menu" id="sidebarMenu">
@@ -540,7 +613,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3 id="modalTitle">Detail Item</h3>
-            <button onclick="closeModal()" style="background:none;border:none;font-size:24px;cursor:pointer;">✕</button>
+            <button onclick="closeModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-primary);">✕</button>
         </div>
         <div class="modal-body" id="modalBody"></div>
     </div>
@@ -557,6 +630,7 @@
     let sheetsList = [];
     let currentView = "dashboard";
     let currentSheet = null;
+    let currentSheetHeaders = [];
     let lastSearchResults = [];
     let isLoading = false;
     let isDarkMode = localStorage.getItem('theme') === 'dark';
@@ -588,7 +662,7 @@
     }
 
     // ========================================
-    // COPY FUNCTION dengan Context Menu
+    // COPY FUNCTION
     // ========================================
     let currentContextMenu = null;
 
@@ -652,7 +726,7 @@
     }
 
     // ========================================
-    // API FUNCTIONS - Menggunakan database pertama
+    // API FUNCTIONS
     // ========================================
     async function getSheets() {
         try {
@@ -698,28 +772,8 @@
         }
     }
 
-    async function searchAllData(keyword) {
-        if (!keyword || keyword.length < 2) return [];
-        const results = [];
-        for (const [sheet, data] of Object.entries(allSheetsData)) {
-            for (const item of data) {
-                let found = false;
-                for (const val of Object.values(item)) {
-                    if (val && String(val).toLowerCase().includes(keyword.toLowerCase())) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (found) {
-                    results.push({ sheet, ...item });
-                }
-            }
-        }
-        return results;
-    }
-
     // ========================================
-    // LOAD ALL DATA (DARI DATABASE PERTAMA)
+    // LOAD ALL DATA
     // ========================================
     async function loadAllData(showToastMsg = false) {
         if (isLoading) return;
@@ -756,7 +810,7 @@
                 <div class="empty-state">
                     <span style="font-size:48px;">⚠️</span>
                     <p>Gagal terhubung ke database</p>
-                    <p class="text-muted" style="font-size:12px;margin-top:8px;">${error.message}</p>
+                    <p style="font-size:12px;margin-top:8px;">${error.message}</p>
                     <button class="refresh-btn" onclick="location.reload()" style="margin-top:16px;">🔄 Coba Lagi</button>
                 </div>
             `;
@@ -848,43 +902,68 @@
     }
 
     // ========================================
-    // SHEET DATA VIEW
+    // SHEET DATA VIEW - Dengan tabel dan 2 kolom copy (kolom 4 dan 5)
     // ========================================
     function showSheetData(sheetName) {
         const data = allSheetsData[sheetName] || [];
-        renderMessages(data, sheetName);
-    }
-
-    function renderMessages(data, source) {
         if (!data.length) {
-            document.getElementById('content').innerHTML = `<div class="empty-state"><span style="font-size:48px;">📭</span><p>Tidak ada data di sheet ${escapeHtml(source)}</p></div>`;
+            document.getElementById('content').innerHTML = `
+                <div class="empty-state">
+                    <span style="font-size:48px;">📭</span>
+                    <p>Tidak ada data di sheet ${escapeHtml(sheetName)}</p>
+                    <button class="btn-back" onclick="showDashboard()">← Kembali ke Dashboard</button>
+                </div>
+            `;
             return;
         }
         
-        let html = ``;
-        data.forEach((item, idx) => {
-            const title = Object.values(item)[0] || "Tanpa judul";
-            const preview = (Object.values(item)[3] || Object.values(item)[2] || Object.values(item)[1] || "").substring(0, 80);
-            
-            html += `
-                <div class="message-item" onclick="showDetail('${source}', ${idx})">
-                    <div class="message-avatar">💬</div>
-                    <div class="message-content">
-                        <div class="message-title">
-                            <span>${escapeHtml(title.substring(0, 50))}</span>
-                            <span class="message-sheet">${escapeHtml(source)}</span>
-                        </div>
-                        <div class="message-preview">${escapeHtml(preview)}</div>
-                    </div>
-                </div>
-            `;
-        });
+        // Ambil headers dari data pertama
+        const headers = Object.keys(data[0]);
+        currentSheetHeaders = headers;
         
-        document.getElementById('content').innerHTML = `<div class="chat-container">${html}</div>`;
+        // Tentukan kolom mana yang bisa di-copy (kolom 4 dan 5 - index 3 dan 4)
+        const copyableIndices = [3, 4]; // kolom ke-4 (index 3) dan kolom ke-5 (index 4)
+        
+        let html = `
+            <div class="sheet-view">
+                <button class="btn-back" onclick="showDashboard()">← Kembali ke Dashboard</button>
+                <div style="margin-top: 16px; background: var(--bg-secondary); border-radius: 16px; overflow-x: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                ${headers.map((h, idx) => `<th>${escapeHtml(h)}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                ${data.map((row, rowIdx) => `
+                    <tr>
+                        ${headers.map((h, colIdx) => {
+                            const value = row[h] || "";
+                            const isCopyable = copyableIndices.includes(colIdx);
+                            if (isCopyable && value) {
+                                return `<td class="copyable-cell" onclick="showContextMenu(event, '${escapeHtml(String(value)).replace(/'/g, "\\'")}', 'Kolom ${colIdx+1}')">
+                                            ${escapeHtml(String(value).substring(0, 100))}${String(value).length > 100 ? '...' : ''}
+                                            <span class="copy-badge">📋 copy</span>
+                                        </td>`;
+                            }
+                            return `<td>${escapeHtml(String(value).substring(0, 100))}${String(value).length > 100 ? '...' : ''}</td>`;
+                        }).join('')}
+                    </tr>
+                `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 16px; padding: 12px; background: var(--bg-secondary); border-radius: 12px; font-size: 12px; color: var(--text-secondary);">
+                    💡 Tips: Kolom yang memiliki badge <span style="background:var(--accent);color:white;padding:2px 8px;border-radius:12px;font-size:10px;">📋 copy</span> dapat diklik untuk menyalin teksnya.
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('content').innerHTML = html;
     }
 
     // ========================================
-    // SEARCH (Realtime)
+    // SEARCH
     // ========================================
     let searchDebounce = null;
     
@@ -914,7 +993,6 @@
                 }
                 
                 if (keyword.length < 2) return;
-                
                 await performSearch(keyword);
             }, 300);
         });
@@ -936,17 +1014,33 @@
         const container = document.getElementById('content');
         container.innerHTML = `<div class="loading"><div class="spinner"></div><p>🔍 Mencari "${escapeHtml(keyword)}"...</p></div>`;
         
-        const results = await searchAllData(keyword);
+        const results = [];
+        for (const [sheet, data] of Object.entries(allSheetsData)) {
+            for (const item of data) {
+                let found = false;
+                for (const val of Object.values(item)) {
+                    if (val && String(val).toLowerCase().includes(keyword.toLowerCase())) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                    results.push({ sheet, ...item });
+                }
+            }
+        }
+        
         lastSearchResults = results;
         currentView = 'search';
         document.getElementById('pageTitle').innerText = `🔍 Hasil: ${keyword}`;
         
         if (!results.length) {
-            container.innerHTML = `<div class="empty-state"><span style="font-size:48px;">🔍</span><p>Tidak ada hasil untuk "<strong>${escapeHtml(keyword)}</strong>"</p></div>`;
+            container.innerHTML = `<div class="empty-state"><span style="font-size:48px;">🔍</span><p>Tidak ada hasil untuk "<strong>${escapeHtml(keyword)}</strong>"</p><button class="btn-back" onclick="showDashboard()">← Kembali</button></div>`;
             return;
         }
         
-        let html = ``;
+        let html = `<button class="btn-back" onclick="showDashboard()">← Kembali ke Dashboard</button>`;
+        html += `<div style="margin-top: 16px;">`;
         results.forEach((item, idx) => {
             const sheet = item.sheet || "Unknown";
             const title = item.judul || item.nama || item.title || Object.values(item)[0] || "Tanpa judul";
@@ -965,41 +1059,13 @@
                 </div>
             `;
         });
-        
-        container.innerHTML = `<div class="chat-container">${html}</div>`;
+        html += `</div>`;
+        container.innerHTML = html;
     }
 
     // ========================================
-    // DETAIL MODAL with Click to Copy
+    // DETAIL MODAL
     // ========================================
-    function showDetail(sheetName, idx) {
-        const data = allSheetsData[sheetName];
-        const item = data[idx];
-        if (!item) return;
-        
-        const modal = document.getElementById('detailModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
-        
-        modalTitle.innerHTML = `📋 ${escapeHtml(sheetName)} (Klik kolom untuk salin)`;
-        
-        let bodyHtml = '';
-        let colIndex = 0;
-        for (const [key, val] of Object.entries(item)) {
-            const label = `Kolom ${colIndex + 1} - ${key}`;
-            bodyHtml += `
-                <div class="detail-row" onclick="showContextMenu(event, '${escapeHtml(String(val)).replace(/'/g, "\\'")}', '${escapeHtml(label)}')">
-                    <div class="detail-label">${escapeHtml(key)}</div>
-                    <div class="detail-value">${escapeHtml(String(val))}</div>
-                </div>
-            `;
-            colIndex++;
-        }
-        modalBody.innerHTML = bodyHtml;
-        
-        modal.classList.add('active');
-    }
-    
     function showSearchDetail(idx) {
         const item = lastSearchResults[idx];
         if (!item) return;
@@ -1008,23 +1074,33 @@
         const modalTitle = document.getElementById('modalTitle');
         const modalBody = document.getElementById('modalBody');
         
-        modalTitle.innerHTML = `📋 ${escapeHtml(item.sheet || 'Detail')} (Klik kolom untuk salin)`;
+        modalTitle.innerHTML = `📋 ${escapeHtml(item.sheet || 'Detail')}`;
         
         let bodyHtml = '';
         let colIndex = 0;
         for (const [key, val] of Object.entries(item)) {
             if (key === 'sheet') continue;
-            const label = `Kolom ${colIndex + 1} - ${key}`;
-            bodyHtml += `
-                <div class="detail-row" onclick="showContextMenu(event, '${escapeHtml(String(val)).replace(/'/g, "\\'")}', '${escapeHtml(label)}')">
-                    <div class="detail-label">${escapeHtml(key)}</div>
-                    <div class="detail-value">${escapeHtml(String(val))}</div>
-                </div>
-            `;
+            // Kolom 4 dan 5 (index 3 dan 4) bisa di-copy
+            const isCopyable = (colIndex === 3 || colIndex === 4);
+            if (isCopyable && val) {
+                bodyHtml += `
+                    <div class="detail-row">
+                        <div class="detail-label">${escapeHtml(key)} <span style="background:var(--accent);color:white;padding:2px 8px;border-radius:12px;font-size:10px;">📋 klik copy</span></div>
+                        <div class="detail-value copyable-val" onclick="showContextMenu(event, '${escapeHtml(String(val)).replace(/'/g, "\\'")}', '${escapeHtml(key)}')">${escapeHtml(String(val))}</div>
+                    </div>
+                `;
+            } else {
+                bodyHtml += `
+                    <div class="detail-row">
+                        <div class="detail-label">${escapeHtml(key)}</div>
+                        <div class="detail-value">${escapeHtml(String(val))}</div>
+                    </div>
+                `;
+            }
             colIndex++;
         }
-        modalBody.innerHTML = bodyHtml;
         
+        modalBody.innerHTML = bodyHtml;
         modal.classList.add('active');
     }
     
@@ -1041,7 +1117,7 @@
             if (!isLoading) {
                 loadAllData(false);
             }
-        }, 60 * 60 * 1000); // Refresh setiap 1 jam
+        }, 60 * 60 * 1000);
     }
     
     async function manualRefresh() {
@@ -1081,12 +1157,12 @@
     // ========================================
     // GLOBAL FUNCTIONS
     // ========================================
-    window.showDetail = showDetail;
     window.showSearchDetail = showSearchDetail;
     window.closeModal = closeModal;
     window.copyToClipboard = copyToClipboard;
     window.showContextMenu = showContextMenu;
     window.manualRefresh = manualRefresh;
+    window.showDashboard = showDashboard;
     
     // ========================================
     // INIT
