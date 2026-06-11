@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>Creator Vault - Professional Dashboard (Fast Load)</title>
+    <title>Creator Vault - Professional Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -141,10 +141,9 @@
             background: rgba(255,255,255,0.25);
             transform: scale(1.02);
         }
-        
+
         .icon-btn.loading {
             animation: spin 0.8s linear infinite;
-            background: rgba(255,255,255,0.3);
         }
 
         /* Search */
@@ -486,7 +485,7 @@
             animation: spin 0.8s linear infinite;
             margin: 20px auto;
         }
-        
+
         .skeleton-loader {
             padding: 16px 24px;
             border-bottom: 1px solid var(--border-light);
@@ -733,11 +732,7 @@
                 <button class="clear-search" id="clearGlobalSearch">✕</button>
             </div>
         </div>
-        <div class="menu-list" id="databaseList">
-            <!-- Loading skeletons -->
-            <div class="skeleton-loader"><div class="skeleton-title"></div><div class="skeleton-text"></div></div>
-            <div class="skeleton-loader"><div class="skeleton-title"></div><div class="skeleton-text"></div></div>
-        </div>
+        <div class="menu-list" id="databaseList"></div>
     </aside>
 
     <!-- Main Content -->
@@ -773,12 +768,12 @@
 
 <script>
     // =========================================
-    // KONFIGURASI - SUMBER DATABASE PERTAMA
+    // KONFIGURASI - SUMBER DATABASE
     // =========================================
     const API_URL = "https://script.google.com/macros/s/AKfycbymziyZ0ZS0syO0c8szOsE_nwCzQtTU07JlPFat0BYDey-OxiuqeSlyLvYlXqZ4gvdv/exec";
     
     // State
-    let allSheetsData = {};     // Cache data utama
+    let allSheetsData = {};
     let sheetsList = [];
     let currentSheet = null;
     let currentDataItems = [];
@@ -786,7 +781,26 @@
     let isDark = localStorage.getItem('wa_dark') === 'true';
     let isLoading = false;
     let autoRefreshInterval = null;
-    let isInitialLoad = true;
+
+    // Helper function untuk safe string conversion
+    function safeString(value) {
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'object') {
+            try {
+                return JSON.stringify(value);
+            } catch(e) {
+                return String(value);
+            }
+        }
+        return String(value);
+    }
+
+    // Helper function untuk safe substring
+    function safeSubstring(text, maxLength = 80) {
+        const str = safeString(text);
+        if (str.length <= maxLength) return str;
+        return str.substring(0, maxLength) + '...';
+    }
 
     // Theme
     function applyTheme() {
@@ -801,7 +815,7 @@
     // Utilities
     function escapeHtml(str) { 
         if(!str) return ''; 
-        return String(str).replace(/[&<>]/g, function(m){ 
+        return safeString(str).replace(/[&<>]/g, function(m){ 
             if(m==='&') return '&amp;'; 
             if(m==='<') return '&lt;'; 
             if(m==='>') return '&gt;'; 
@@ -819,26 +833,31 @@
 
     async function copyText(text, label) {
         try {
-            await navigator.clipboard.writeText(String(text || ''));
+            const textToCopy = safeString(text);
+            await navigator.clipboard.writeText(textToCopy);
             showToast(`✅ ${label} tersalin!`);
         } catch(e) { 
             showToast(`❌ Gagal salin`); 
         }
     }
-    
+
     // Loading indicator helpers
-    function setRefreshLoading(isLoading) {
-        const btn = document.getElementById('refreshDataBtn');
-        if(btn) {
-            if(isLoading) btn.classList.add('loading');
-            else btn.classList.remove('loading');
-        }
+    function setRefreshLoading(loading) {
+        const btns = ['refreshDataBtn', 'refreshSidebarBtn'];
+        btns.forEach(id => {
+            const btn = document.getElementById(id);
+            if(btn) {
+                if(loading) btn.classList.add('loading');
+                else btn.classList.remove('loading');
+            }
+        });
     }
 
-    // API Functions - OPTIMIZED: Fetch all sheets data in parallel
+    // API Functions - Optimized parallel fetching
     async function getSheets() {
         try {
             let res = await fetch(`${API_URL}?action=sheets`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             let data = await res.json();
             if(Array.isArray(data)) return data;
             if(data && Array.isArray(data.sheets)) return data.sheets;
@@ -852,24 +871,39 @@
     async function getSheetData(sheetName) {
         try {
             let res = await fetch(`${API_URL}?action=data&sheet=${encodeURIComponent(sheetName)}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             let data = await res.json();
-            if(Array.isArray(data) && data.length && Array.isArray(data[0])) {
+            
+            // Validasi struktur data
+            if(Array.isArray(data) && data.length > 0 && Array.isArray(data[0])) {
                 let headers = data[0];
                 let rows = data.slice(1);
                 return rows.map(row => {
                     let obj = {};
-                    headers.forEach((h,i) => obj[h] = row[i] || "");
+                    headers.forEach((h, i) => {
+                        const value = (row[i] !== undefined && row[i] !== null) ? row[i] : "";
+                        obj[h] = value;
+                    });
                     return obj;
                 });
             }
-            return Array.isArray(data) ? data : [];
+            
+            // Jika format berbeda, coba handle
+            if(Array.isArray(data)) {
+                return data.map(item => {
+                    if (typeof item === 'object' && item !== null) return item;
+                    return { value: safeString(item) };
+                });
+            }
+            
+            return [];
         } catch(e) { 
             console.error(`Error fetching sheet ${sheetName}:`, e);
             return []; 
         }
     }
 
-    // OPTIMIZED: Load all data using Promise.all for parallel fetching
+    // Load all data dengan parallel fetching
     async function loadAllData(forceRefresh = false, showMsg = false) {
         if(isLoading) {
             if(showMsg) showToast("⏳ Masih memuat data...");
@@ -879,34 +913,31 @@
         isLoading = true;
         setRefreshLoading(true);
         
-        // Tampilkan skeleton loading di sidebar dan konten jika first load
-        if(forceRefresh || isInitialLoad) {
-            document.getElementById('dynamicContent').innerHTML = `<div class="stats-wrapper"><div class="loading-spinner"></div></div>`;
-        }
-        
         try {
-            // STEP 1: Ambil daftar sheet
+            // Ambil daftar sheet
             const newSheetsList = await getSheets();
-            if(!newSheetsList.length) throw new Error("Tidak ada sheet ditemukan");
+            if(!newSheetsList.length) {
+                throw new Error("Tidak ada sheet ditemukan. Periksa koneksi atau struktur database.");
+            }
             
-            // STEP 2: Parallel fetch semua data sheet (JAUH LEBIH CEPAT)
+            // Parallel fetch semua data
             const fetchPromises = newSheetsList.map(sheet => getSheetData(sheet));
             const allResults = await Promise.all(fetchPromises);
             
-            // STEP 3: Update cache
+            // Update cache
             const newAllSheetsData = {};
             newSheetsList.forEach((sheet, index) => {
-                newAllSheetsData[sheet] = allResults[index] || [];
+                newAllSheetsData[sheet] = Array.isArray(allResults[index]) ? allResults[index] : [];
             });
             
-            // STEP 4: Update global state
+            // Update global state
             sheetsList = newSheetsList;
             allSheetsData = newAllSheetsData;
             
-            // STEP 5: Render UI
+            // Render UI
             renderSidebar();
             
-            // Jika sedang di halaman sheet tertentu, refresh tampilannya
+            // Refresh tampilan sesuai halaman saat ini
             if(currentSheet && allSheetsData[currentSheet]) {
                 renderSheetData(currentSheet);
             } else {
@@ -914,7 +945,6 @@
             }
             
             if(showMsg) showToast("✅ Data berhasil diperbarui");
-            if(isInitialLoad) isInitialLoad = false;
             
         } catch(err) {
             console.error("Load all data error:", err);
@@ -923,12 +953,14 @@
                     <div class="data-card">
                         <div class="empty-state">
                             <span style="font-size:48px;">⚠️</span>
-                            <p>Gagal terhubung ke database: ${err.message}</p>
+                            <p>Gagal terhubung ke database</p>
+                            <p style="font-size:12px; margin-top:8px;">${escapeHtml(err.message)}</p>
                             <button onclick="loadAllData(true, true)" style="margin-top:16px; background:var(--accent); border:none; padding:10px 24px; border-radius:30px; color:white; cursor:pointer;">Coba Lagi</button>
                         </div>
                     </div>
                 </div>
             `;
+            renderSidebar();
         } finally { 
             isLoading = false; 
             setRefreshLoading(false);
@@ -939,21 +971,29 @@
     function renderSidebar() {
         let menuDiv = document.getElementById('databaseList');
         if(!menuDiv) return;
+        
         let icons = { 
             "Ebook":"📚","Produk":"🛒","Pelanggan":"👥","TemplateChat":"💬",
             "Affiliate":"🔗","PromptAI":"🧠","IdeKonten":"💡","Notes":"📝",
             "ReadingProgress":"📖","Bookmarks":"🔖"
         };
+        
         let html = `<div class="menu-item" data-db="dashboard"><div class="menu-emoji">📊</div><div class="menu-name">Dashboard</div></div>`;
         html += `<div class="menu-separator">━━ DATABASE ━━</div>`;
-        sheetsList.forEach(sheet => {
-            let count = allSheetsData[sheet]?.length || 0;
-            html += `<div class="menu-item" data-db="${escapeHtml(sheet)}">
-                        <div class="menu-emoji">${icons[sheet] || "📄"}</div>
-                        <div class="menu-name">${escapeHtml(sheet)}</div>
-                        <div class="menu-badge">${count}</div>
-                     </div>`;
-        });
+        
+        if(sheetsList.length === 0) {
+            html += `<div class="empty-state" style="padding:20px;">Belum ada database</div>`;
+        } else {
+            sheetsList.forEach(sheet => {
+                let count = (allSheetsData[sheet] && Array.isArray(allSheetsData[sheet])) ? allSheetsData[sheet].length : 0;
+                html += `<div class="menu-item" data-db="${escapeHtml(sheet)}">
+                            <div class="menu-emoji">${icons[sheet] || "📄"}</div>
+                            <div class="menu-name">${escapeHtml(sheet)}</div>
+                            <div class="menu-badge">${count}</div>
+                         </div>`;
+            });
+        }
+        
         menuDiv.innerHTML = html;
         
         // Attach event listeners
@@ -968,7 +1008,7 @@
             });
         });
         
-        // Highlight active menu jika ada currentSheet
+        // Highlight active menu
         if(currentSheet) {
             const activeMenu = Array.from(document.querySelectorAll('.menu-item[data-db]')).find(el => el.getAttribute('data-db') === currentSheet);
             if(activeMenu) activeMenu.classList.add('active');
@@ -978,10 +1018,14 @@
         }
     }
 
-    // Dashboard dengan Statistik Profesional
+    // Dashboard
     function renderDashboard() {
         currentSheet = null;
-        let totalItems = Object.values(allSheetsData).reduce((a,b)=>a+(b?.length||0),0);
+        let totalItems = 0;
+        Object.values(allSheetsData).forEach(data => {
+            if(Array.isArray(data)) totalItems += data.length;
+        });
+        
         document.getElementById('pageTitle').innerHTML = 'Dashboard';
         document.getElementById('pageSubtitle').innerHTML = 'Personal Knowledge Hub & Digital Library';
         
@@ -1009,18 +1053,21 @@
                         <h3>📊 Statistik per Database</h3>
                     </div>
                     <div class="messages-list">
-                        ${sheetsList.map(sheet => `
-                            <div class="message-item" style="cursor:pointer" onclick="renderSheetData('${escapeHtml(sheet)}')">
-                                <div class="message-avatar">${iconsMap(sheet)}</div>
-                                <div class="message-details">
-                                    <div class="message-title-row">
-                                        <span class="message-title">${escapeHtml(sheet)}</span>
-                                        <span class="sheet-badge">${allSheetsData[sheet]?.length || 0} items</span>
+                        ${sheetsList.map(sheet => {
+                            const dataCount = (allSheetsData[sheet] && Array.isArray(allSheetsData[sheet])) ? allSheetsData[sheet].length : 0;
+                            return `
+                                <div class="message-item" style="cursor:pointer" onclick="renderSheetData('${escapeHtml(sheet)}')">
+                                    <div class="message-avatar">${iconsMap(sheet)}</div>
+                                    <div class="message-details">
+                                        <div class="message-title-row">
+                                            <span class="message-title">${escapeHtml(sheet)}</span>
+                                            <span class="sheet-badge">${dataCount} items</span>
+                                        </div>
+                                        <div class="message-preview">Klik untuk melihat detail dan menyalin data</div>
                                     </div>
-                                    <div class="message-preview">Klik untuk melihat detail dan menyalin data</div>
                                 </div>
-                            </div>
-                        `).join('')}
+                            `;
+                        }).join('')}
                     </div>
                 </div>
             </div>
@@ -1038,16 +1085,41 @@
         return icons[sheet] || "📄";
     }
 
-    // Render Sheet Data (rendering langsung dari cache, super cepat)
+    // Get safe value from object by index
+    function getSafeValueFromItem(item, index, defaultValue = '') {
+        if (!item || typeof item !== 'object') return defaultValue;
+        const values = Object.values(item);
+        if (index >= 0 && index < values.length) {
+            return safeString(values[index]);
+        }
+        return defaultValue;
+    }
+
+    // Get title dari item (kolom pertama)
+    function getItemTitle(item) {
+        const firstValue = getSafeValueFromItem(item, 0, 'Tanpa judul');
+        return safeSubstring(firstValue, 50);
+    }
+
+    // Get preview dari item (kolom 4 atau 3 atau 2)
+    function getItemPreview(item) {
+        let preview = getSafeValueFromItem(item, 3);
+        if (!preview) preview = getSafeValueFromItem(item, 2);
+        if (!preview) preview = getSafeValueFromItem(item, 1);
+        return safeSubstring(preview, 80);
+    }
+
+    // Render Sheet Data
     function renderSheetData(sheetName) {
-        if(!allSheetsData[sheetName]) {
+        if(!allSheetsData[sheetName] || !Array.isArray(allSheetsData[sheetName])) {
             showToast(`⚠️ Database ${sheetName} tidak ditemukan`);
             return;
         }
         
         currentSheet = sheetName;
-        let data = allSheetsData[sheetName] || [];
+        let data = allSheetsData[sheetName];
         currentDataItems = data;
+        
         document.getElementById('pageTitle').innerHTML = sheetName;
         document.getElementById('pageSubtitle').innerHTML = `📊 ${data.length} item • Klik item untuk salin kolom 5 & 6`;
         
@@ -1065,14 +1137,14 @@
                     </div>
                     <div class="messages-list">
                         ${data.map((item, idx) => {
-                            let title = Object.values(item)[0] || "Tanpa judul";
-                            let preview = (Object.values(item)[3] || Object.values(item)[2] || "").substring(0, 80);
+                            const title = getItemTitle(item);
+                            const preview = getItemPreview(item);
                             return `
                                 <div class="message-item" onclick="openCopyModal(${idx}, '${escapeHtml(sheetName)}')">
                                     <div class="message-avatar">💬</div>
                                     <div class="message-details">
                                         <div class="message-title-row">
-                                            <span class="message-title">${escapeHtml(title.substring(0, 50))}</span>
+                                            <span class="message-title">${escapeHtml(title)}</span>
                                             <span class="sheet-badge">${escapeHtml(sheetName)}</span>
                                         </div>
                                         <div class="message-preview">${escapeHtml(preview)}</div>
@@ -1093,45 +1165,55 @@
         if(activeMenu) activeMenu.classList.add('active');
     }
 
-    // Open Modal Copy - Kolom 5 & 6
+    // Open Modal Copy - Kolom 5 & 6 (index 4 dan 5)
     function openCopyModal(idx, sheetName) {
-        let item = allSheetsData[sheetName]?.[idx];
-        if(!item) return;
+        const item = allSheetsData[sheetName]?.[idx];
+        if(!item) {
+            showToast("❌ Data tidak ditemukan");
+            return;
+        }
         
-        const valuesArray = Object.values(item);
         const keysArray = Object.keys(item);
-        
-        let col5 = valuesArray[4] !== undefined ? valuesArray[4] : "";
-        let col6 = valuesArray[5] !== undefined ? valuesArray[5] : "";
-        let label5 = keysArray[4] || "Kolom 5";
-        let label6 = keysArray[5] || "Kolom 6";
+        const col5Value = getSafeValueFromItem(item, 4, '');
+        const col6Value = getSafeValueFromItem(item, 5, '');
+        const label5 = (keysArray[4] && keysArray[4] !== 'undefined') ? keysArray[4] : "Kolom 5";
+        const label6 = (keysArray[5] && keysArray[5] !== 'undefined') ? keysArray[5] : "Kolom 6";
         
         let modalBody = document.getElementById('modalCopyContent');
         modalBody.innerHTML = `
             <div style="margin-bottom:16px; font-size:12px; color:var(--text-secondary);">📄 Dari: <strong>${escapeHtml(sheetName)}</strong></div>
             <div class="copy-col" id="copyCol5Btn">
                 <div class="col-label">📋 ${escapeHtml(label5)} (Kolom 5)</div>
-                <div class="col-value">${escapeHtml(String(col5)) || '-'}</div>
+                <div class="col-value">${escapeHtml(col5Value) || '-'}</div>
             </div>
             <div class="copy-col" id="copyCol6Btn">
                 <div class="col-label">📋 ${escapeHtml(label6)} (Kolom 6)</div>
-                <div class="col-value">${escapeHtml(String(col6)) || '-'}</div>
+                <div class="col-value">${escapeHtml(col6Value) || '-'}</div>
             </div>
             <div style="font-size:11px; color:var(--text-secondary); margin-top:12px; text-align:center;">✨ Klik pada kotak untuk menyalin teks</div>
         `;
         document.getElementById('copyModal').classList.add('active');
         
-        document.getElementById('copyCol5Btn')?.addEventListener('click', (e) => {
+        // Hapus event listener lama dengan clone + replace
+        const col5Btn = document.getElementById('copyCol5Btn');
+        const col6Btn = document.getElementById('copyCol6Btn');
+        
+        const newCol5Btn = col5Btn.cloneNode(true);
+        const newCol6Btn = col6Btn.cloneNode(true);
+        if(col5Btn) col5Btn.parentNode.replaceChild(newCol5Btn, col5Btn);
+        if(col6Btn) col6Btn.parentNode.replaceChild(newCol6Btn, col6Btn);
+        
+        newCol5Btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            copyText(String(col5), label5);
+            copyText(col5Value, label5);
         });
-        document.getElementById('copyCol6Btn')?.addEventListener('click', (e) => {
+        newCol6Btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            copyText(String(col6), label6);
+            copyText(col6Value, label6);
         });
     }
 
-    // Search Function (mencari di cache, cepat)
+    // Search Function
     let searchTimeout = null;
     function initSearch() {
         let input = document.getElementById('globalSearch');
@@ -1162,12 +1244,22 @@
 
     async function performSearch(keyword) {
         let results = [];
+        const searchLower = keyword.toLowerCase();
+        
         for(let [sheet, items] of Object.entries(allSheetsData)) {
+            if(!Array.isArray(items)) continue;
             for(let it of items) {
-                let match = Object.values(it).some(v => v && String(v).toLowerCase().includes(keyword.toLowerCase()));
+                let match = false;
+                if(it && typeof it === 'object') {
+                    match = Object.values(it).some(v => {
+                        const str = safeString(v);
+                        return str.toLowerCase().includes(searchLower);
+                    });
+                }
                 if(match) results.push({ sheet, data: it });
             }
         }
+        
         searchResults = results;
         document.getElementById('pageTitle').innerHTML = `🔍 Hasil: "${escapeHtml(keyword)}"`;
         document.getElementById('pageSubtitle').innerHTML = `${results.length} item ditemukan`;
@@ -1181,14 +1273,14 @@
                     </div>
                     <div class="messages-list">
                         ${results.length === 0 ? '<div class="empty-state">Tidak ada hasil ditemukan</div>' : results.map((res, idx) => {
-                            let title = Object.values(res.data)[0] || "Item";
-                            let preview = (Object.values(res.data)[3] || Object.values(res.data)[2] || "").substring(0, 80);
+                            const title = getItemTitle(res.data);
+                            const preview = getItemPreview(res.data);
                             return `
                                 <div class="message-item" onclick="openSearchModal(${idx})">
                                     <div class="message-avatar">🔍</div>
                                     <div class="message-details">
                                         <div class="message-title-row">
-                                            <span class="message-title">${escapeHtml(title.substring(0, 50))}</span>
+                                            <span class="message-title">${escapeHtml(title)}</span>
                                             <span class="sheet-badge">${escapeHtml(res.sheet)}</span>
                                         </div>
                                         <div class="message-preview">${escapeHtml(preview)}</div>
@@ -1207,37 +1299,47 @@
     function openSearchModal(idx) {
         let item = searchResults[idx]?.data;
         let sheetName = searchResults[idx]?.sheet;
-        if(!item) return;
+        if(!item) {
+            showToast("❌ Data tidak ditemukan");
+            return;
+        }
         
-        const valuesArray = Object.values(item);
         const keysArray = Object.keys(item);
-        let col5 = valuesArray[4] !== undefined ? valuesArray[4] : "";
-        let col6 = valuesArray[5] !== undefined ? valuesArray[5] : "";
-        let label5 = keysArray[4] || "Kolom 5";
-        let label6 = keysArray[5] || "Kolom 6";
+        const col5Value = getSafeValueFromItem(item, 4, '');
+        const col6Value = getSafeValueFromItem(item, 5, '');
+        const label5 = (keysArray[4] && keysArray[4] !== 'undefined') ? keysArray[4] : "Kolom 5";
+        const label6 = (keysArray[5] && keysArray[5] !== 'undefined') ? keysArray[5] : "Kolom 6";
         
         let modalBody = document.getElementById('modalCopyContent');
         modalBody.innerHTML = `
             <div style="margin-bottom:16px; font-size:12px; color:var(--text-secondary);">📄 Dari: <strong>${escapeHtml(sheetName)}</strong></div>
             <div class="copy-col" id="copyCol5Btn">
                 <div class="col-label">📋 ${escapeHtml(label5)} (Kolom 5)</div>
-                <div class="col-value">${escapeHtml(String(col5)) || '-'}</div>
+                <div class="col-value">${escapeHtml(col5Value) || '-'}</div>
             </div>
             <div class="copy-col" id="copyCol6Btn">
                 <div class="col-label">📋 ${escapeHtml(label6)} (Kolom 6)</div>
-                <div class="col-value">${escapeHtml(String(col6)) || '-'}</div>
+                <div class="col-value">${escapeHtml(col6Value) || '-'}</div>
             </div>
             <div style="font-size:11px; color:var(--text-secondary); margin-top:12px; text-align:center;">✨ Klik pada kotak untuk menyalin teks</div>
         `;
         document.getElementById('copyModal').classList.add('active');
         
-        document.getElementById('copyCol5Btn')?.addEventListener('click', (e) => {
+        const col5Btn = document.getElementById('copyCol5Btn');
+        const col6Btn = document.getElementById('copyCol6Btn');
+        
+        const newCol5Btn = col5Btn.cloneNode(true);
+        const newCol6Btn = col6Btn.cloneNode(true);
+        if(col5Btn) col5Btn.parentNode.replaceChild(newCol5Btn, col5Btn);
+        if(col6Btn) col6Btn.parentNode.replaceChild(newCol6Btn, col6Btn);
+        
+        newCol5Btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            copyText(String(col5), label5);
+            copyText(col5Value, label5);
         });
-        document.getElementById('copyCol6Btn')?.addEventListener('click', (e) => {
+        newCol6Btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            copyText(String(col6), label6);
+            copyText(col6Value, label6);
         });
     }
 
@@ -1249,7 +1351,6 @@
         }, 60 * 60 * 1000);
     }
     
-    // Manual full refresh (bypass cache, force ambil data terbaru dari server)
     async function fullRefresh() {
         if(isLoading) { showToast("⏳ Masih memuat data..."); return; }
         showToast("🔄 Memperbarui data dari server...");
@@ -1261,6 +1362,7 @@
     function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobileOverlay').classList.remove('active'); }
     function closeModal() { document.getElementById('copyModal').classList.remove('active'); }
     
+    // Expose functions to global
     window.renderSheetData = renderSheetData;
     window.openCopyModal = openCopyModal;
     window.openSearchModal = openSearchModal;
