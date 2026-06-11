@@ -3,37 +3,534 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Creator Vault - Knowledge Hub</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Creator Vault - Knowledge Hub Modern</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --sidebar-bg: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+            --sidebar-text: #ffffff;
+            --text-primary: #1a1a2e;
+            --text-secondary: #666666;
+            --border-color: #eef2f6;
+            --accent: #4a9eff;
+            --accent-hover: #3a7ecc;
+            --message-bg: #ffffff;
+            --search-bg: #ffffff;
+            --hover-bg: #f5f5f5;
+            --card-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        body.dark {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #aaaaaa;
+            --border-color: #2a2a2a;
+            --sidebar-bg: linear-gradient(180deg, #0a0a0f 0%, #050508 100%);
+            --sidebar-text: #e0e0e0;
+            --accent: #4a9eff;
+            --message-bg: #2a2a2a;
+            --search-bg: #2a2a2a;
+            --hover-bg: #2a2a2a;
+            --card-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background 0.2s, color 0.2s;
+        }
+
+        /* Mobile Menu */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 1001;
+            background: var(--accent);
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            font-size: 22px;
+            cursor: pointer;
+            color: white;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 998;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+            z-index: 999;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            font-size: 20px;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .menu {
+            list-style: none;
+            padding: 16px 12px;
+        }
+
+        .menu-item {
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+
+        .menu-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .menu-item.active {
+            background: var(--accent);
+        }
+
+        .menu-separator {
+            padding: 12px 16px 6px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 1px;
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            margin-left: 280px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .main-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .main-header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .theme-toggle, .refresh-btn {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            width: 38px;
+            height: 38px;
+            border-radius: 38px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn {
+            width: auto;
+            padding: 0 16px;
+            gap: 6px;
+            background: var(--accent);
+            color: white;
+            border: none;
+        }
+
+        /* Search Container */
+        .search-container {
+            padding: 12px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 60px;
+            z-index: 99;
+        }
+
+        .search-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: var(--search-bg);
+            border-radius: 30px;
+            padding: 4px 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .search-wrapper span {
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
+
+        .search-box {
+            flex: 1;
+            padding: 12px 0;
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            color: var(--text-primary);
+            outline: none;
+        }
+
+        .clear-search {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 4px;
+            display: none;
+        }
+
+        .clear-search.show {
+            display: block;
+        }
+
+        /* Dashboard Analytics */
+        .analytics-container {
+            padding: 24px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--card-shadow);
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        /* Chat Container */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 24px;
+        }
+
+        .message-item {
+            display: flex;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            padding: 12px;
+            border-radius: 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .message-item:hover {
+            background: var(--hover-bg);
+            transform: translateY(-2px);
+            box-shadow: var(--card-shadow);
+        }
+
+        .message-avatar {
+            width: 48px;
+            height: 48px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+        }
+
+        .message-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .message-sheet {
+            font-size: 10px;
+            color: var(--accent);
+            background: var(--bg-primary);
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .message-preview {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        /* Context Menu (Copy Popup) */
+        .context-menu {
+            position: fixed;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 3000;
+            overflow: hidden;
+            min-width: 180px;
+        }
+
+        .context-menu-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .context-menu-item:hover {
+            background: var(--hover-bg);
+        }
+
+        .context-menu-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 4px 0;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 28px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: var(--bg-secondary);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .detail-row {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.2s;
+            border-radius: 8px;
+        }
+
+        .detail-row:hover {
+            background: var(--hover-bg);
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+
+        .detail-value pre {
+            background: var(--bg-primary);
+            padding: 12px;
+            border-radius: 12px;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 13px;
+            margin-top: 6px;
+            white-space: pre-wrap;
+        }
+
+        /* Loading & Empty */
+        .loading, .empty-state {
+            text-align: center;
+            padding: 60px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            z-index: 3000;
+            animation: fadeInOut 2s ease;
+            font-size: 13px;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .mobile-menu-btn { display: flex; }
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar-overlay.active { display: block; }
+            .main { margin-left: 0; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .message-avatar { width: 40px; height: 40px; font-size: 16px; }
+        }
+    </style>
 </head>
 <body>
 
 <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-<div class="app">
+<div style="display: flex; min-height: 100vh;">
     <aside class="sidebar" id="sidebar">
-        <div class="logo">Creator Vault</div>
+        <div class="sidebar-header">
+            <span>🏦 Creator Vault</span>
+            <span style="font-size: 11px; opacity:0.5;">v3.0</span>
+        </div>
         <ul class="menu" id="sidebarMenu">
             <li class="menu-separator">━━ MENU ━━</li>
         </ul>
     </aside>
 
     <main class="main">
-        <div class="header">
+        <div class="main-header">
             <h1 id="pageTitle">Dashboard</h1>
-            <p id="pageSubtitle">Personal Knowledge Hub & Digital Library</p>
+            <div class="header-actions">
+                <button class="theme-toggle" id="themeToggle">🌙</button>
+                <button class="refresh-btn" id="refreshBtn">🔄 Refresh</button>
+            </div>
         </div>
 
         <div class="search-container">
-            <input type="text" id="searchInput" class="search-box" placeholder="🔍 Cari di semua database... (Ctrl+K)" autocomplete="off">
+            <div class="search-wrapper">
+                <span>🔍</span>
+                <input type="text" id="searchInput" class="search-box" placeholder="Cari di semua database..." autocomplete="off">
+                <button class="clear-search" id="clearSearchBtn">✕</button>
+            </div>
         </div>
 
-        <div id="content" class="content">
-            <div class="loading-card">
-                <div class="loading-spinner"></div>
-                <h3>Memuat data...</h3>
-            </div>
+        <div id="content" class="chat-container">
+            <div class="loading"><div class="spinner"></div><p>Memuat data dari database...</p></div>
         </div>
     </main>
 </div>
@@ -43,63 +540,143 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3 id="modalTitle">Detail Item</h3>
-            <button class="close-modal" onclick="closeModal()">✕</button>
+            <button onclick="closeModal()" style="background:none;border:none;font-size:24px;cursor:pointer;">✕</button>
         </div>
         <div class="modal-body" id="modalBody"></div>
-        <div class="modal-footer">
-            <button onclick="closeModal()" class="btn-secondary">Tutup</button>
-        </div>
     </div>
 </div>
 
 <script>
     // ========================================
-    // KONFIGURASI - SATU-SATUNYA SUMBER DATA
+    // KONFIGURASI - SUMBER DATA PERTAMA
     // ========================================
     const API_URL = "https://script.google.com/macros/s/AKfycbymziyZ0ZS0syO0c8szOsE_nwCzQtTU07JlPFat0BYDey-OxiuqeSlyLvYlXqZ4gvdv/exec";
     
-    // Global state
+    // State
     let allSheetsData = {};
     let sheetsList = [];
+    let currentView = "dashboard";
     let currentSheet = null;
+    let lastSearchResults = [];
     let isLoading = false;
-    let currentPage = 1;
-    let currentFilter = "";
-    let currentSearchKeyword = "";
-    let searchTimeout;
-    let currentData = [];
-    let currentHeaders = [];
-    const itemsPerPage = 20;
-    
+    let isDarkMode = localStorage.getItem('theme') === 'dark';
+    let autoRefreshInterval = null;
+
     // ========================================
-    // API FUNCTIONS
+    // THEME
+    // ========================================
+    function initTheme() {
+        if (isDarkMode) {
+            document.body.classList.add('dark');
+            document.getElementById('themeToggle').innerHTML = '☀️';
+        } else {
+            document.getElementById('themeToggle').innerHTML = '🌙';
+        }
+    }
+
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        if (isDarkMode) {
+            document.body.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+            document.getElementById('themeToggle').innerHTML = '☀️';
+        } else {
+            document.body.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+            document.getElementById('themeToggle').innerHTML = '🌙';
+        }
+    }
+
+    // ========================================
+    // COPY FUNCTION dengan Context Menu
+    // ========================================
+    let currentContextMenu = null;
+
+    function showContextMenu(event, text, label) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        if (currentContextMenu) {
+            currentContextMenu.remove();
+        }
+        
+        const menu = document.createElement('div');
+        menu.className = 'context-menu';
+        menu.style.left = event.clientX + 'px';
+        menu.style.top = event.clientY + 'px';
+        
+        menu.innerHTML = `
+            <div class="context-menu-item" onclick="copyToClipboard('${escapeHtml(text).replace(/'/g, "\\'")}', this)">
+                📋 Salin ${label}
+            </div>
+        `;
+        
+        document.body.appendChild(menu);
+        currentContextMenu = menu;
+        
+        setTimeout(() => {
+            document.addEventListener('click', function removeMenu() {
+                if (currentContextMenu) {
+                    currentContextMenu.remove();
+                    currentContextMenu = null;
+                }
+                document.removeEventListener('click', removeMenu);
+            });
+        }, 10);
+    }
+
+    async function copyToClipboard(text, buttonElement) {
+        try {
+            await navigator.clipboard.writeText(text);
+            const originalText = buttonElement.innerHTML;
+            buttonElement.innerHTML = '✓ Tersalin!';
+            setTimeout(() => {
+                buttonElement.innerHTML = originalText;
+                if (currentContextMenu) {
+                    currentContextMenu.remove();
+                    currentContextMenu = null;
+                }
+            }, 1500);
+            showToast('✅ Berhasil tersalin!');
+        } catch(err) {
+            showToast('❌ Gagal menyalin');
+        }
+    }
+
+    function showToast(message) {
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+
+    // ========================================
+    // API FUNCTIONS - Menggunakan database pertama
     // ========================================
     async function getSheets() {
         try {
             const res = await fetch(`${API_URL}?action=sheets`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            console.log("Sheets from API:", data);
-            
+            console.log("Sheets dari API:", data);
             if (Array.isArray(data)) return data;
             if (data && Array.isArray(data.sheets)) return data.sheets;
             if (data && Array.isArray(data.data)) return data.data;
-            
             return [];
         } catch (error) {
             console.error("getSheets error:", error);
             return [];
         }
     }
-    
+
     async function getSheetData(sheetName) {
         try {
             const res = await fetch(`${API_URL}?action=data&sheet=${encodeURIComponent(sheetName)}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            console.log(`Data from ${sheetName}:`, data);
+            console.log(`Data dari ${sheetName}:`, data);
             
-            // Convert 2D array to objects
             if (Array.isArray(data) && data.length > 0) {
                 if (Array.isArray(data[0])) {
                     const headers = data[0];
@@ -114,410 +691,15 @@
                 }
                 return data;
             }
-            
             return [];
         } catch (error) {
-            console.error(`getSheetData error for ${sheetName}:`, error);
+            console.error(`getSheetData error untuk ${sheetName}:`, error);
             return [];
         }
     }
-    
-    // ========================================
-    // LOAD ALL DATA
-    // ========================================
-    async function loadAllData() {
-        if (isLoading) return;
-        isLoading = true;
-        
-        const content = document.getElementById('content');
-        if (content) {
-            content.innerHTML = `<div class="loading-card"><div class="loading-spinner"></div><h3>🔄 Mengambil data dari database...</h3><p>${API_URL.substring(0, 60)}...</p></div>`;
-        }
-        
-        try {
-            sheetsList = await getSheets();
-            console.log("Sheets found:", sheetsList);
-            
-            if (!sheetsList || sheetsList.length === 0) {
-                throw new Error("Tidak ada sheet yang ditemukan di database");
-            }
-            
-            allSheetsData = {};
-            for (const sheet of sheetsList) {
-                const data = await getSheetData(sheet);
-                allSheetsData[sheet] = data;
-                console.log(`Loaded ${sheet}: ${data.length} items`);
-            }
-            
-            await loadSidebar();
-            await showDashboard();
-            
-        } catch (error) {
-            console.error("Load error:", error);
-            if (content) {
-                content.innerHTML = `
-                    <div class="card error-card">
-                        <h3>⚠️ Gagal Terhubung ke Database</h3>
-                        <p>Error: ${error.message}</p>
-                        <p class="text-muted">URL API: ${API_URL}</p>
-                        <button onclick="loadAllData()" class="btn-primary mt-3">🔄 Coba Lagi</button>
-                        <button onclick="testConnection()" class="btn-secondary mt-3">🔍 Test Connection</button>
-                    </div>
-                `;
-            }
-        } finally {
-            isLoading = false;
-        }
-    }
-    
-    async function testConnection() {
-        try {
-            const res = await fetch(`${API_URL}?action=sheets`);
-            const data = await res.json();
-            alert(`✅ Koneksi Berhasil!\n\nResponse: ${JSON.stringify(data).substring(0, 200)}\n\nSheets: ${Array.isArray(data) ? data.join(", ") : "Format response: " + typeof data}`);
-        } catch (error) {
-            alert(`❌ Koneksi Gagal!\n\nError: ${error.message}\n\nURL: ${API_URL}`);
-        }
-    }
-    
-    // ========================================
-    // SIDEBAR
-    // ========================================
-    async function loadSidebar() {
-        const menu = document.getElementById("sidebarMenu");
-        if (!menu) return;
-        
-        const icons = {
-            "Ebook": "📚", "Produk": "🛒", "Pelanggan": "👥", "TemplateChat": "💬",
-            "Affiliate": "🔗", "PromptAI": "🤖", "IdeKonten": "💡", "Notes": "📝", "ReadingProgress": "📖", "Bookmarks": "🔖"
-        };
-        
-        menu.innerHTML = `
-            <li class="menu-item active" data-view="dashboard">
-                <span>📊</span> Dashboard
-            </li>
-            <li class="menu-separator">━━ DATABASE ━━</li>
-            ${sheetsList.map(sheet => `
-                <li class="menu-item" data-sheet="${sheet.replace(/"/g, '&quot;')}">
-                    <span>${icons[sheet] || "📄"}</span> ${escapeHtml(sheet)}
-                </li>
-            `).join('')}
-            <li class="menu-separator">━━ ━━</li>
-            <li class="menu-item" data-action="refresh">
-                <span>🔄</span> Refresh Data
-            </li>
-        `;
-        
-        // Add event listeners
-        document.querySelectorAll('.menu-item[data-view], .menu-item[data-sheet], .menu-item[data-action]').forEach(item => {
-            item.addEventListener('click', async () => {
-                document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-                item.classList.add('active');
-                
-                if (item.dataset.view === 'dashboard') {
-                    await showDashboard();
-                } else if (item.dataset.sheet) {
-                    await loadSheet(item.dataset.sheet);
-                } else if (item.dataset.action === 'refresh') {
-                    await loadAllData();
-                }
-                
-                // Close sidebar on mobile
-                if (window.innerWidth <= 768) {
-                    document.getElementById('sidebar').classList.remove('open');
-                    document.getElementById('sidebarOverlay').classList.remove('active');
-                }
-            });
-        });
-    }
-    
-    // ========================================
-    // DASHBOARD
-    // ========================================
-    async function showDashboard() {
-        currentSheet = null;
-        currentSearchKeyword = "";
-        document.getElementById('pageTitle').innerHTML = '🏠 Dashboard';
-        document.getElementById('pageSubtitle').innerHTML = 'Personal Knowledge Hub & Digital Library';
-        
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) searchInput.value = "";
-        
-        const totalItems = Object.values(allSheetsData).reduce((sum, data) => sum + (data?.length || 0), 0);
-        
-        const content = document.getElementById('content');
-        content.innerHTML = `
-            <div class="dashboard-welcome">
-                <h1>🏦 Creator Vault</h1>
-                <p>Selamat datang di pusat knowledge hub Anda</p>
-                <div class="last-updated">🕐 Terakhir diperbarui: ${new Date().toLocaleString()}</div>
-            </div>
-            
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number">${sheetsList.length}</div>
-                    <div class="stat-label">Database Categories</div>
-                    <div class="stat-icon">📁</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">${totalItems}</div>
-                    <div class="stat-label">Total Items</div>
-                    <div class="stat-icon">📄</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">✓</div>
-                    <div class="stat-label">Online</div>
-                    <div class="stat-icon">🔗</div>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h3>📚 Semua Database</h3>
-                <div class="sheet-grid">
-                    ${sheetsList.map(sheet => {
-                        const count = allSheetsData[sheet]?.length || 0;
-                        const icon = getSheetIcon(sheet);
-                        return `
-                            <div class="sheet-card" onclick="loadSheet('${escapeHtml(sheet)}')">
-                                <div class="sheet-icon">${icon}</div>
-                                <div class="sheet-name">${escapeHtml(sheet)}</div>
-                                <div class="sheet-count">📊 ${count} items</div>
-                                <div class="sheet-hover">Klik untuk lihat detail →</div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-        `;
-    }
-    
-    function getSheetIcon(sheetName) {
-        const icons = {
-            "Ebook": "📚", "Produk": "🛒", "Pelanggan": "👥", "TemplateChat": "💬",
-            "Affiliate": "🔗", "PromptAI": "🤖", "IdeKonten": "💡", "Notes": "📝"
-        };
-        return icons[sheetName] || "📄";
-    }
-    
-    // ========================================
-    // SHEET VIEWER
-    // ========================================
-    async function loadSheet(sheetName) {
-        currentSheet = sheetName;
-        currentPage = 1;
-        currentFilter = "";
-        currentSearchKeyword = "";
-        
-        document.getElementById('pageTitle').innerHTML = `📄 ${escapeHtml(sheetName)}`;
-        document.getElementById('pageSubtitle').innerHTML = `Menampilkan data dari database ${escapeHtml(sheetName)}`;
-        
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) searchInput.value = "";
-        
-        const data = allSheetsData[sheetName] || [];
-        currentData = data;
-        
-        if (data.length > 0) {
-            currentHeaders = Object.keys(data[0]);
-        }
-        
-        renderSheetData();
-    }
-    
-    function renderSheetData() {
-        const content = document.getElementById('content');
-        
-        if (!currentData || currentData.length === 0) {
-            content.innerHTML = `
-                <div class="card empty-sheet">
-                    <div class="empty-icon">📭</div>
-                    <h2>📄 ${escapeHtml(currentSheet)}</h2>
-                    <p>Tidak ada data di sheet ini.</p>
-                    <button onclick="showDashboard()" class="btn-primary">← Kembali ke Dashboard</button>
-                </div>
-            `;
-            return;
-        }
-        
-        let filteredData = [...currentData];
-        if (currentFilter) {
-            filteredData = currentData.filter(row => 
-                JSON.stringify(row).toLowerCase().includes(currentFilter.toLowerCase())
-            );
-        }
-        
-        const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-        const startIdx = (currentPage - 1) * itemsPerPage;
-        const pageData = filteredData.slice(startIdx, startIdx + itemsPerPage);
-        
-        let html = `
-            <div class="sheet-header">
-                <div>
-                    <h2>📄 ${escapeHtml(currentSheet)}</h2>
-                    <div class="sheet-stats">📊 ${filteredData.length} item ditemukan ${currentFilter ? `(filter: "${currentFilter}")` : ""}</div>
-                </div>
-                <div class="sheet-actions">
-                    <button onclick="showDashboard()" class="btn-secondary">← Dashboard</button>
-                    <button onclick="exportSheetData()" class="btn-secondary">📥 Export CSV</button>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="filter-bar">
-                    <input type="text" id="sheetFilter" placeholder="🔍 Filter data di sheet ini..." 
-                           value="${escapeHtml(currentFilter)}" onkeyup="handleFilterKeyup(event)">
-                    ${currentFilter ? `<button onclick="clearFilter()" class="btn-small">✖ Clear</button>` : ""}
-                </div>
-                
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                ${currentHeaders.map(col => `<th>${escapeHtml(col)}</th>`).join('')}
-                                <th style="width:60px">Detail</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${pageData.map((row, idx) => renderTableRow(row, startIdx + idx)).join('')}
-                        </tbody>
-                    </table>
-                </div>
-        `;
-        
-        if (totalPages > 1) {
-            html += `
-                <div class="pagination">
-                    <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>◀ Sebelumnya</button>
-                    <span>Halaman ${currentPage} dari ${totalPages}</span>
-                    <button onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''}>Berikutnya ▶</button>
-                </div>
-            `;
-        }
-        
-        html += `</div>`;
-        content.innerHTML = html;
-        
-        const filterInput = document.getElementById("sheetFilter");
-        if (filterInput) filterInput.focus();
-    }
-    
-    function renderTableRow(row, index) {
-        return `
-            <tr>
-                ${currentHeaders.map(col => {
-                    const value = row[col] || '';
-                    const truncated = value.length > 50 ? value.substring(0, 50) + '...' : value;
-                    return `<td title="${escapeHtml(value)}">${escapeHtml(truncated)}</td>`;
-                }).join('')}
-                <td class="text-center">
-                    <button class="btn-small" onclick="showDetail(${index})">👁️</button>
-                </td>
-            </tr>
-        `;
-    }
-    
-    function handleFilterKeyup(event) {
-        currentFilter = event.target.value;
-        currentPage = 1;
-        renderSheetData();
-    }
-    
-    function clearFilter() {
-        currentFilter = "";
-        currentPage = 1;
-        renderSheetData();
-    }
-    
-    function changePage(delta) {
-        currentPage += delta;
-        renderSheetData();
-    }
-    
-    function showDetail(index) {
-        let filteredData = [...currentData];
-        if (currentFilter) {
-            filteredData = currentData.filter(row => 
-                JSON.stringify(row).toLowerCase().includes(currentFilter.toLowerCase())
-            );
-        }
-        const item = filteredData[index];
-        if (!item) return;
-        
-        const modal = document.getElementById('detailModal');
-        const modalBody = document.getElementById('modalBody');
-        const modalTitle = document.getElementById('modalTitle');
-        
-        modalTitle.innerHTML = `📋 Detail Item - ${escapeHtml(currentSheet)}`;
-        
-        let html = '';
-        for (const [key, value] of Object.entries(item)) {
-            html += `
-                <div class="detail-row">
-                    <div class="detail-label">${escapeHtml(key)}</div>
-                    <div class="detail-value">
-                        ${isUrl(value) ? `<a href="${value}" target="_blank" rel="noopener">${escapeHtml(value)}</a>` : 
-                          value ? `<pre>${escapeHtml(String(value))}</pre>` : '-'}
-                    </div>
-                </div>
-            `;
-        }
-        
-        modalBody.innerHTML = html;
-        modal.classList.add('active');
-    }
-    
-    function exportSheetData() {
-        if (!currentData || currentData.length === 0) {
-            alert("Tidak ada data untuk diexport");
-            return;
-        }
-        
-        const headers = currentHeaders;
-        const rows = currentData.map(row => headers.map(h => `"${String(row[h] || "").replace(/"/g, '""')}"`));
-        const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
-        
-        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${currentSheet}_export_${new Date().toISOString().slice(0,19)}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        showToast("✅ Data berhasil diexport");
-    }
-    
-    // ========================================
-    // SEARCH FUNCTION
-    // ========================================
-    function initSearch() {
-        const input = document.getElementById('searchInput');
-        if (!input) return;
-        
-        input.addEventListener('input', () => {
-            clearTimeout(searchTimeout);
-            const keyword = input.value.trim();
-            currentSearchKeyword = keyword;
-            
-            if (keyword.length < 2) {
-                if (currentSheet) {
-                    loadSheet(currentSheet);
-                } else {
-                    showDashboard();
-                }
-                return;
-            }
-            
-            searchTimeout = setTimeout(() => {
-                performSearch(keyword);
-            }, 400);
-        });
-    }
-    
-    async function performSearch(keyword) {
-        const content = document.getElementById('content');
-        content.innerHTML = `<div class="loading-card"><div class="loading-spinner"></div><h3>🔍 Mencari "${escapeHtml(keyword)}"...</h3></div>`;
-        
+
+    async function searchAllData(keyword) {
+        if (!keyword || keyword.length < 2) return [];
         const results = [];
         for (const [sheet, data] of Object.entries(allSheetsData)) {
             for (const item of data) {
@@ -529,94 +711,351 @@
                     }
                 }
                 if (found) {
-                    results.push({ sheet, data: item });
+                    results.push({ sheet, ...item });
                 }
             }
         }
+        return results;
+    }
+
+    // ========================================
+    // LOAD ALL DATA (DARI DATABASE PERTAMA)
+    // ========================================
+    async function loadAllData(showToastMsg = false) {
+        if (isLoading) return;
+        isLoading = true;
         
-        if (results.length === 0) {
+        const content = document.getElementById('content');
+        content.innerHTML = `<div class="loading"><div class="spinner"></div><p>🔄 Mengambil data dari database...</p></div>`;
+        
+        try {
+            sheetsList = await getSheets();
+            console.log("Sheets ditemukan:", sheetsList);
+            
+            if (!sheetsList || sheetsList.length === 0) {
+                throw new Error("Tidak ada sheet yang ditemukan di database");
+            }
+            
+            const promises = sheetsList.map(async sheet => {
+                const data = await getSheetData(sheet);
+                return { sheet, data };
+            });
+            const results = await Promise.all(promises);
+            results.forEach(result => {
+                allSheetsData[result.sheet] = result.data;
+                console.log(`Loaded ${result.sheet}: ${result.data.length} items`);
+            });
+            
+            await loadSidebar();
+            await showDashboard();
+            
+            if (showToastMsg) showToast('✅ Data berhasil diperbarui');
+        } catch(error) {
+            console.error("Load error:", error);
             content.innerHTML = `
-                <div class="card empty-search">
-                    <div class="empty-icon">🔍</div>
-                    <p>Tidak ada hasil untuk "<strong>${escapeHtml(keyword)}</strong>"</p>
-                    <button onclick="showDashboard()" class="btn-primary mt-3">← Kembali ke Dashboard</button>
+                <div class="empty-state">
+                    <span style="font-size:48px;">⚠️</span>
+                    <p>Gagal terhubung ke database</p>
+                    <p class="text-muted" style="font-size:12px;margin-top:8px;">${error.message}</p>
+                    <button class="refresh-btn" onclick="location.reload()" style="margin-top:16px;">🔄 Coba Lagi</button>
                 </div>
             `;
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    // ========================================
+    // SIDEBAR
+    // ========================================
+    async function loadSidebar() {
+        const menu = document.getElementById("sidebarMenu");
+        const icons = {
+            "Ebook": "📚", "Produk": "🛒", "Pelanggan": "👥", "TemplateChat": "💬",
+            "Affiliate": "🔗", "PromptAI": "🧠", "IdeKonten": "💡", "Notes": "📝",
+            "ReadingProgress": "📖", "Bookmarks": "🔖"
+        };
+        
+        menu.innerHTML = `
+            <li class="menu-item" data-view="dashboard">
+                <span>📊</span> Dashboard
+            </li>
+            <li class="menu-separator">━━ DATABASE ━━</li>
+            ${sheetsList.map(sheet => `
+                <li class="menu-item" data-sheet="${sheet.replace(/"/g, '&quot;')}">
+                    <span>${icons[sheet] || "📄"}</span> ${escapeHtml(sheet)}
+                </li>
+            `).join('')}
+        `;
+        
+        document.querySelectorAll('.menu-item[data-view], .menu-item[data-sheet]').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+                item.classList.add('active');
+                
+                if (item.dataset.view === 'dashboard') {
+                    currentView = 'dashboard';
+                    currentSheet = null;
+                    document.getElementById('pageTitle').innerText = 'Dashboard';
+                    showDashboard();
+                } else if (item.dataset.sheet) {
+                    currentView = 'sheet';
+                    currentSheet = item.dataset.sheet;
+                    document.getElementById('pageTitle').innerText = currentSheet;
+                    showSheetData(currentSheet);
+                }
+                
+                if (window.innerWidth <= 768) toggleSidebar(false);
+            });
+        });
+        
+        document.querySelector('.menu-item[data-view="dashboard"]').classList.add('active');
+    }
+
+    // ========================================
+    // DASHBOARD
+    // ========================================
+    function showDashboard() {
+        const totalItems = Object.values(allSheetsData).reduce((sum, data) => sum + (data?.length || 0), 0);
+        
+        document.getElementById('content').innerHTML = `
+            <div class="analytics-container">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">${sheetsList.length}</div>
+                        <div>Database Categories</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${totalItems}</div>
+                        <div>Total Items</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">✓</div>
+                        <div>Online</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <h3 style="margin-bottom:16px;">📊 Statistik per Database</h3>
+                    ${sheetsList.map(sheet => `
+                        <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-color);">
+                            <span>📄 ${escapeHtml(sheet)}</span>
+                            <span style="color:var(--accent);">${allSheetsData[sheet]?.length || 0} items</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // ========================================
+    // SHEET DATA VIEW
+    // ========================================
+    function showSheetData(sheetName) {
+        const data = allSheetsData[sheetName] || [];
+        renderMessages(data, sheetName);
+    }
+
+    function renderMessages(data, source) {
+        if (!data.length) {
+            document.getElementById('content').innerHTML = `<div class="empty-state"><span style="font-size:48px;">📭</span><p>Tidak ada data di sheet ${escapeHtml(source)}</p></div>`;
             return;
         }
         
-        document.getElementById('pageTitle').innerHTML = `🔍 Hasil Pencarian`;
-        document.getElementById('pageSubtitle').innerHTML = `Menemukan ${results.length} hasil untuk "${escapeHtml(keyword)}"`;
-        
-        let html = `<div class="card"><h3>🔍 Hasil Pencarian: "${escapeHtml(keyword)}"</h3><p class="text-muted">${results.length} item ditemukan</p>`;
-        
-        const grouped = {};
-        results.forEach(r => {
-            if (!grouped[r.sheet]) grouped[r.sheet] = [];
-            grouped[r.sheet].push(r.data);
-        });
-        
-        for (const [sheet, items] of Object.entries(grouped)) {
+        let html = ``;
+        data.forEach((item, idx) => {
+            const title = Object.values(item)[0] || "Tanpa judul";
+            const preview = (Object.values(item)[3] || Object.values(item)[2] || Object.values(item)[1] || "").substring(0, 80);
+            
             html += `
-                <div style="margin-top: 24px;">
-                    <h4 style="color: var(--accent); margin-bottom: 12px;">📄 ${escapeHtml(sheet)} (${items.length})</h4>
-                    <div class="sheet-grid" style="grid-template-columns: 1fr;">
-                        ${items.slice(0, 5).map(item => {
-                            const title = Object.values(item)[0] || "Tanpa Judul";
-                            return `
-                                <div class="sheet-card" onclick="showSearchDetail('${sheet}', '${escapeHtml(String(title))}')" style="cursor: pointer;">
-                                    <div class="sheet-name">📌 ${escapeHtml(String(title).substring(0, 60))}</div>
-                                    <div class="sheet-hover">Klik untuk lihat detail →</div>
-                                </div>
-                            `;
-                        }).join('')}
-                        ${items.length > 5 ? `<div class="text-muted" style="padding: 8px;">+ ${items.length - 5} hasil lainnya di ${escapeHtml(sheet)}</div>` : ''}
+                <div class="message-item" onclick="showDetail('${source}', ${idx})">
+                    <div class="message-avatar">💬</div>
+                    <div class="message-content">
+                        <div class="message-title">
+                            <span>${escapeHtml(title.substring(0, 50))}</span>
+                            <span class="message-sheet">${escapeHtml(source)}</span>
+                        </div>
+                        <div class="message-preview">${escapeHtml(preview)}</div>
                     </div>
                 </div>
             `;
-        }
+        });
         
-        html += `<div class="mt-4"><button onclick="showDashboard()" class="btn-primary">← Kembali ke Dashboard</button></div></div>`;
-        content.innerHTML = html;
+        document.getElementById('content').innerHTML = `<div class="chat-container">${html}</div>`;
+    }
+
+    // ========================================
+    // SEARCH (Realtime)
+    // ========================================
+    let searchDebounce = null;
+    
+    function initSearch() {
+        const input = document.getElementById('searchInput');
+        const clearBtn = document.getElementById('clearSearchBtn');
+        
+        input.addEventListener('input', (e) => {
+            const keyword = e.target.value;
+            
+            if (keyword.length > 0) {
+                clearBtn.classList.add('show');
+            } else {
+                clearBtn.classList.remove('show');
+            }
+            
+            if (searchDebounce) clearTimeout(searchDebounce);
+            
+            searchDebounce = setTimeout(async () => {
+                if (keyword.length === 0) {
+                    if (currentSheet && currentView === 'sheet') {
+                        showSheetData(currentSheet);
+                    } else {
+                        showDashboard();
+                    }
+                    return;
+                }
+                
+                if (keyword.length < 2) return;
+                
+                await performSearch(keyword);
+            }, 300);
+        });
+        
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            clearBtn.classList.remove('show');
+            input.focus();
+            
+            if (currentSheet && currentView === 'sheet') {
+                showSheetData(currentSheet);
+            } else {
+                showDashboard();
+            }
+        });
     }
     
-    function showSearchDetail(sheet, title) {
-        const data = allSheetsData[sheet];
-        const item = data.find(d => String(Object.values(d)[0]) === title);
+    async function performSearch(keyword) {
+        const container = document.getElementById('content');
+        container.innerHTML = `<div class="loading"><div class="spinner"></div><p>🔍 Mencari "${escapeHtml(keyword)}"...</p></div>`;
+        
+        const results = await searchAllData(keyword);
+        lastSearchResults = results;
+        currentView = 'search';
+        document.getElementById('pageTitle').innerText = `🔍 Hasil: ${keyword}`;
+        
+        if (!results.length) {
+            container.innerHTML = `<div class="empty-state"><span style="font-size:48px;">🔍</span><p>Tidak ada hasil untuk "<strong>${escapeHtml(keyword)}</strong>"</p></div>`;
+            return;
+        }
+        
+        let html = ``;
+        results.forEach((item, idx) => {
+            const sheet = item.sheet || "Unknown";
+            const title = item.judul || item.nama || item.title || Object.values(item)[0] || "Tanpa judul";
+            const preview = (Object.values(item)[3] || Object.values(item)[2] || Object.values(item)[1] || "").substring(0, 80);
+            
+            html += `
+                <div class="message-item" onclick="showSearchDetail(${idx})">
+                    <div class="message-avatar">🔍</div>
+                    <div class="message-content">
+                        <div class="message-title">
+                            <span>${escapeHtml(title.substring(0, 50))}</span>
+                            <span class="message-sheet">${escapeHtml(sheet)}</span>
+                        </div>
+                        <div class="message-preview">${escapeHtml(preview)}</div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = `<div class="chat-container">${html}</div>`;
+    }
+
+    // ========================================
+    // DETAIL MODAL with Click to Copy
+    // ========================================
+    function showDetail(sheetName, idx) {
+        const data = allSheetsData[sheetName];
+        const item = data[idx];
         if (!item) return;
         
         const modal = document.getElementById('detailModal');
-        const modalBody = document.getElementById('modalBody');
         const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
         
-        modalTitle.innerHTML = `📋 Detail dari ${escapeHtml(sheet)}`;
+        modalTitle.innerHTML = `📋 ${escapeHtml(sheetName)} (Klik kolom untuk salin)`;
         
-        let html = '';
-        for (const [key, value] of Object.entries(item)) {
-            html += `
-                <div class="detail-row">
+        let bodyHtml = '';
+        let colIndex = 0;
+        for (const [key, val] of Object.entries(item)) {
+            const label = `Kolom ${colIndex + 1} - ${key}`;
+            bodyHtml += `
+                <div class="detail-row" onclick="showContextMenu(event, '${escapeHtml(String(val)).replace(/'/g, "\\'")}', '${escapeHtml(label)}')">
                     <div class="detail-label">${escapeHtml(key)}</div>
-                    <div class="detail-value">
-                        ${isUrl(value) ? `<a href="${value}" target="_blank" rel="noopener">${escapeHtml(value)}</a>` : 
-                          value ? `<pre>${escapeHtml(String(value))}</pre>` : '-'}
-                    </div>
+                    <div class="detail-value">${escapeHtml(String(val))}</div>
                 </div>
             `;
+            colIndex++;
         }
+        modalBody.innerHTML = bodyHtml;
         
-        modalBody.innerHTML = html;
         modal.classList.add('active');
     }
     
+    function showSearchDetail(idx) {
+        const item = lastSearchResults[idx];
+        if (!item) return;
+        
+        const modal = document.getElementById('detailModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        
+        modalTitle.innerHTML = `📋 ${escapeHtml(item.sheet || 'Detail')} (Klik kolom untuk salin)`;
+        
+        let bodyHtml = '';
+        let colIndex = 0;
+        for (const [key, val] of Object.entries(item)) {
+            if (key === 'sheet') continue;
+            const label = `Kolom ${colIndex + 1} - ${key}`;
+            bodyHtml += `
+                <div class="detail-row" onclick="showContextMenu(event, '${escapeHtml(String(val)).replace(/'/g, "\\'")}', '${escapeHtml(label)}')">
+                    <div class="detail-label">${escapeHtml(key)}</div>
+                    <div class="detail-value">${escapeHtml(String(val))}</div>
+                </div>
+            `;
+            colIndex++;
+        }
+        modalBody.innerHTML = bodyHtml;
+        
+        modal.classList.add('active');
+    }
+    
+    function closeModal() {
+        document.getElementById('detailModal').classList.remove('active');
+    }
+
+    // ========================================
+    // AUTO REFRESH & MANUAL
+    // ========================================
+    function startAutoRefresh() {
+        if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+        autoRefreshInterval = setInterval(() => {
+            if (!isLoading) {
+                loadAllData(false);
+            }
+        }, 60 * 60 * 1000); // Refresh setiap 1 jam
+    }
+    
+    async function manualRefresh() {
+        if (isLoading) {
+            showToast('⏳ Masih memuat data...');
+            return;
+        }
+        showToast('🔄 Mengambil data terbaru...');
+        await loadAllData(true);
+    }
+
     // ========================================
     // UTILITIES
     // ========================================
-    function isUrl(str) {
-        if (!str || typeof str !== 'string') return false;
-        return str.startsWith('http://') || str.startsWith('https://') || 
-               str.includes('drive.google.com') || str.includes('docs.google.com');
-    }
-    
     function escapeHtml(str) {
         if (!str) return '';
         return String(str)
@@ -627,69 +1066,47 @@
             .replace(/'/g, '&#39;');
     }
     
-    function showToast(message) {
-        const toast = document.createElement('div');
-        toast.className = 'toast';
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
-    }
-    
-    function closeModal() {
-        document.getElementById('detailModal').classList.remove('active');
-    }
-    
-    // ========================================
-    // MOBILE MENU
-    // ========================================
-    function initMobileMenu() {
-        const btn = document.getElementById('mobileMenuBtn');
+    function toggleSidebar(show) {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
-        
-        if (btn) {
-            btn.onclick = () => {
-                sidebar.classList.toggle('open');
-                overlay.classList.toggle('active');
-            };
-        }
-        
-        if (overlay) {
-            overlay.onclick = () => {
-                sidebar.classList.remove('open');
-                overlay.classList.remove('active');
-            };
+        if (show) {
+            sidebar.classList.add('open');
+            overlay.classList.add('active');
+        } else {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
         }
     }
+
+    // ========================================
+    // GLOBAL FUNCTIONS
+    // ========================================
+    window.showDetail = showDetail;
+    window.showSearchDetail = showSearchDetail;
+    window.closeModal = closeModal;
+    window.copyToClipboard = copyToClipboard;
+    window.showContextMenu = showContextMenu;
+    window.manualRefresh = manualRefresh;
     
     // ========================================
     // INIT
     // ========================================
-    document.addEventListener('DOMContentLoaded', () => {
-        initMobileMenu();
-        initSearch();
-        loadAllData();
+    document.addEventListener('DOMContentLoaded', async () => {
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        const overlay = document.getElementById('sidebarOverlay');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const themeToggleBtn = document.getElementById('themeToggle');
         
-        // Keyboard shortcut Ctrl+K
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                document.getElementById('searchInput').focus();
-            }
-        });
+        mobileBtn.onclick = () => toggleSidebar(true);
+        overlay.onclick = () => toggleSidebar(false);
+        refreshBtn.onclick = () => manualRefresh();
+        themeToggleBtn.onclick = () => toggleTheme();
+        
+        initTheme();
+        await loadAllData(false);
+        initSearch();
+        startAutoRefresh();
     });
-    
-    // Global functions
-    window.showDashboard = showDashboard;
-    window.loadSheet = loadSheet;
-    window.showDetail = showDetail;
-    window.changePage = changePage;
-    window.clearFilter = clearFilter;
-    window.handleFilterKeyup = handleFilterKeyup;
-    window.exportSheetData = exportSheetData;
-    window.showSearchDetail = showSearchDetail;
-    window.closeModal = closeModal;
-    window.testConnection = testConnection;
 </script>
 </body>
 </html>
