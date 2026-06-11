@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>Creator Vault - Professional Dashboard</title>
+    <title>Creator Vault - Professional Dashboard (Fast Load)</title>
     <style>
         * {
             margin: 0;
@@ -734,6 +734,7 @@
             </div>
         </div>
         <div class="menu-list" id="databaseList">
+            <!-- Loading skeletons -->
             <div class="skeleton-loader"><div class="skeleton-title"></div><div class="skeleton-text"></div></div>
             <div class="skeleton-loader"><div class="skeleton-title"></div><div class="skeleton-text"></div></div>
         </div>
@@ -772,12 +773,12 @@
 
 <script>
     // =========================================
-    // KONFIGURASI - SUMBER DATABASE
+    // KONFIGURASI - SUMBER DATABASE PERTAMA
     // =========================================
     const API_URL = "https://script.google.com/macros/s/AKfycbymziyZ0ZS0syO0c8szOsE_nwCzQtTU07JlPFat0BYDey-OxiuqeSlyLvYlXqZ4gvdv/exec";
     
     // State
-    let allSheetsData = {};
+    let allSheetsData = {};     // Cache data utama
     let sheetsList = [];
     let currentSheet = null;
     let currentDataItems = [];
@@ -786,29 +787,6 @@
     let isLoading = false;
     let autoRefreshInterval = null;
     let isInitialLoad = true;
-
-    // Helper function untuk aman mengambil string dari berbagai tipe data
-    function safeString(value) {
-        if (value === null || value === undefined) return '';
-        if (typeof value === 'string') return value;
-        if (typeof value === 'number') return value.toString();
-        if (typeof value === 'boolean') return value ? 'true' : 'false';
-        if (typeof value === 'object') {
-            try {
-                return JSON.stringify(value);
-            } catch(e) {
-                return String(value);
-            }
-        }
-        return String(value);
-    }
-
-    // Helper untuk memotong string dengan aman
-    function truncateString(str, maxLength = 80) {
-        const safeStr = safeString(str);
-        if (safeStr.length <= maxLength) return safeStr;
-        return safeStr.substring(0, maxLength) + '...';
-    }
 
     // Theme
     function applyTheme() {
@@ -823,7 +801,7 @@
     // Utilities
     function escapeHtml(str) { 
         if(!str) return ''; 
-        return safeString(str).replace(/[&<>]/g, function(m){ 
+        return String(str).replace(/[&<>]/g, function(m){ 
             if(m==='&') return '&amp;'; 
             if(m==='<') return '&lt;'; 
             if(m==='>') return '&gt;'; 
@@ -841,7 +819,7 @@
 
     async function copyText(text, label) {
         try {
-            await navigator.clipboard.writeText(safeString(text));
+            await navigator.clipboard.writeText(String(text || ''));
             showToast(`✅ ${label} tersalin!`);
         } catch(e) { 
             showToast(`❌ Gagal salin`); 
@@ -880,7 +858,7 @@
                 let rows = data.slice(1);
                 return rows.map(row => {
                     let obj = {};
-                    headers.forEach((h,i) => obj[h] = row[i] !== undefined ? row[i] : "");
+                    headers.forEach((h,i) => obj[h] = row[i] || "");
                     return obj;
                 });
             }
@@ -901,27 +879,34 @@
         isLoading = true;
         setRefreshLoading(true);
         
+        // Tampilkan skeleton loading di sidebar dan konten jika first load
         if(forceRefresh || isInitialLoad) {
             document.getElementById('dynamicContent').innerHTML = `<div class="stats-wrapper"><div class="loading-spinner"></div></div>`;
         }
         
         try {
+            // STEP 1: Ambil daftar sheet
             const newSheetsList = await getSheets();
             if(!newSheetsList.length) throw new Error("Tidak ada sheet ditemukan");
             
+            // STEP 2: Parallel fetch semua data sheet (JAUH LEBIH CEPAT)
             const fetchPromises = newSheetsList.map(sheet => getSheetData(sheet));
             const allResults = await Promise.all(fetchPromises);
             
+            // STEP 3: Update cache
             const newAllSheetsData = {};
             newSheetsList.forEach((sheet, index) => {
                 newAllSheetsData[sheet] = allResults[index] || [];
             });
             
+            // STEP 4: Update global state
             sheetsList = newSheetsList;
             allSheetsData = newAllSheetsData;
             
+            // STEP 5: Render UI
             renderSidebar();
             
+            // Jika sedang di halaman sheet tertentu, refresh tampilannya
             if(currentSheet && allSheetsData[currentSheet]) {
                 renderSheetData(currentSheet);
             } else {
@@ -938,7 +923,7 @@
                     <div class="data-card">
                         <div class="empty-state">
                             <span style="font-size:48px;">⚠️</span>
-                            <p>Gagal terhubung ke database: ${escapeHtml(err.message)}</p>
+                            <p>Gagal terhubung ke database: ${err.message}</p>
                             <button onclick="loadAllData(true, true)" style="margin-top:16px; background:var(--accent); border:none; padding:10px 24px; border-radius:30px; color:white; cursor:pointer;">Coba Lagi</button>
                         </div>
                     </div>
@@ -971,6 +956,7 @@
         });
         menuDiv.innerHTML = html;
         
+        // Attach event listeners
         document.querySelectorAll('.menu-item[data-db]').forEach(el => {
             el.addEventListener('click', () => {
                 let db = el.getAttribute('data-db');
@@ -982,6 +968,7 @@
             });
         });
         
+        // Highlight active menu jika ada currentSheet
         if(currentSheet) {
             const activeMenu = Array.from(document.querySelectorAll('.menu-item[data-db]')).find(el => el.getAttribute('data-db') === currentSheet);
             if(activeMenu) activeMenu.classList.add('active');
@@ -991,7 +978,7 @@
         }
     }
 
-    // Dashboard
+    // Dashboard dengan Statistik Profesional
     function renderDashboard() {
         currentSheet = null;
         let totalItems = Object.values(allSheetsData).reduce((a,b)=>a+(b?.length||0),0);
@@ -1040,6 +1027,7 @@
         `;
         document.getElementById('dynamicContent').innerHTML = html;
         
+        // Highlight sidebar
         document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
         const dashMenu = document.querySelector('.menu-item[data-db="dashboard"]');
         if(dashMenu) dashMenu.classList.add('active');
@@ -1050,7 +1038,7 @@
         return icons[sheet] || "📄";
     }
 
-    // Render Sheet Data dengan safe string handling
+    // Render Sheet Data (rendering langsung dari cache, super cepat)
     function renderSheetData(sheetName) {
         if(!allSheetsData[sheetName]) {
             showToast(`⚠️ Database ${sheetName} tidak ditemukan`);
@@ -1077,19 +1065,225 @@
                     </div>
                     <div class="messages-list">
                         ${data.map((item, idx) => {
-                            // Ambil nilai pertama sebagai title dengan aman
-                            const valuesArray = Object.values(item);
-                            const firstValue = valuesArray[0];
-                            let title = safeString(firstValue);
-                            if(!title) title = "Item #" + (idx + 1);
-                            
-                            // Ambil preview dengan aman (kolom 4 atau 3)
-                            let previewValue = valuesArray[3] !== undefined ? valuesArray[3] : (valuesArray[2] !== undefined ? valuesArray[2] : "");
-                            let preview = truncateString(previewValue, 80);
-                            
+                            let title = Object.values(item)[0] || "Tanpa judul";
+                            let preview = (Object.values(item)[3] || Object.values(item)[2] || "").substring(0, 80);
                             return `
                                 <div class="message-item" onclick="openCopyModal(${idx}, '${escapeHtml(sheetName)}')">
                                     <div class="message-avatar">💬</div>
                                     <div class="message-details">
                                         <div class="message-title-row">
-                                            <span class="message-title">${escapeHtml(title
+                                            <span class="message-title">${escapeHtml(title.substring(0, 50))}</span>
+                                            <span class="sheet-badge">${escapeHtml(sheetName)}</span>
+                                        </div>
+                                        <div class="message-preview">${escapeHtml(preview)}</div>
+                                        <div class="copy-badge">✨ Klik untuk salin kolom 5 & 6</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('dynamicContent').innerHTML = html;
+        
+        // Highlight sidebar menu
+        document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+        const activeMenu = Array.from(document.querySelectorAll('.menu-item[data-db]')).find(el => el.getAttribute('data-db') === sheetName);
+        if(activeMenu) activeMenu.classList.add('active');
+    }
+
+    // Open Modal Copy - Kolom 5 & 6
+    function openCopyModal(idx, sheetName) {
+        let item = allSheetsData[sheetName]?.[idx];
+        if(!item) return;
+        
+        const valuesArray = Object.values(item);
+        const keysArray = Object.keys(item);
+        
+        let col5 = valuesArray[4] !== undefined ? valuesArray[4] : "";
+        let col6 = valuesArray[5] !== undefined ? valuesArray[5] : "";
+        let label5 = keysArray[4] || "Kolom 5";
+        let label6 = keysArray[5] || "Kolom 6";
+        
+        let modalBody = document.getElementById('modalCopyContent');
+        modalBody.innerHTML = `
+            <div style="margin-bottom:16px; font-size:12px; color:var(--text-secondary);">📄 Dari: <strong>${escapeHtml(sheetName)}</strong></div>
+            <div class="copy-col" id="copyCol5Btn">
+                <div class="col-label">📋 ${escapeHtml(label5)} (Kolom 5)</div>
+                <div class="col-value">${escapeHtml(String(col5)) || '-'}</div>
+            </div>
+            <div class="copy-col" id="copyCol6Btn">
+                <div class="col-label">📋 ${escapeHtml(label6)} (Kolom 6)</div>
+                <div class="col-value">${escapeHtml(String(col6)) || '-'}</div>
+            </div>
+            <div style="font-size:11px; color:var(--text-secondary); margin-top:12px; text-align:center;">✨ Klik pada kotak untuk menyalin teks</div>
+        `;
+        document.getElementById('copyModal').classList.add('active');
+        
+        document.getElementById('copyCol5Btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyText(String(col5), label5);
+        });
+        document.getElementById('copyCol6Btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyText(String(col6), label6);
+        });
+    }
+
+    // Search Function (mencari di cache, cepat)
+    let searchTimeout = null;
+    function initSearch() {
+        let input = document.getElementById('globalSearch');
+        let clearBtn = document.getElementById('clearGlobalSearch');
+        input.addEventListener('input', (e) => {
+            let kw = e.target.value.trim();
+            if(kw.length > 0) clearBtn.classList.add('show');
+            else clearBtn.classList.remove('show');
+            if(searchTimeout) clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if(kw.length === 0) {
+                    if(currentSheet) renderSheetData(currentSheet);
+                    else renderDashboard();
+                    return;
+                }
+                if(kw.length < 2) return;
+                performSearch(kw);
+            }, 300);
+        });
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            clearBtn.classList.remove('show');
+            input.focus();
+            if(currentSheet) renderSheetData(currentSheet);
+            else renderDashboard();
+        });
+    }
+
+    async function performSearch(keyword) {
+        let results = [];
+        for(let [sheet, items] of Object.entries(allSheetsData)) {
+            for(let it of items) {
+                let match = Object.values(it).some(v => v && String(v).toLowerCase().includes(keyword.toLowerCase()));
+                if(match) results.push({ sheet, data: it });
+            }
+        }
+        searchResults = results;
+        document.getElementById('pageTitle').innerHTML = `🔍 Hasil: "${escapeHtml(keyword)}"`;
+        document.getElementById('pageSubtitle').innerHTML = `${results.length} item ditemukan`;
+        
+        let html = `
+            <div class="stats-wrapper">
+                <div class="data-card">
+                    <div class="card-header">
+                        <h3>🔍 Hasil Pencarian</h3>
+                        <button class="btn-secondary" onclick="renderDashboard()">← Kembali</button>
+                    </div>
+                    <div class="messages-list">
+                        ${results.length === 0 ? '<div class="empty-state">Tidak ada hasil ditemukan</div>' : results.map((res, idx) => {
+                            let title = Object.values(res.data)[0] || "Item";
+                            let preview = (Object.values(res.data)[3] || Object.values(res.data)[2] || "").substring(0, 80);
+                            return `
+                                <div class="message-item" onclick="openSearchModal(${idx})">
+                                    <div class="message-avatar">🔍</div>
+                                    <div class="message-details">
+                                        <div class="message-title-row">
+                                            <span class="message-title">${escapeHtml(title.substring(0, 50))}</span>
+                                            <span class="sheet-badge">${escapeHtml(res.sheet)}</span>
+                                        </div>
+                                        <div class="message-preview">${escapeHtml(preview)}</div>
+                                        <div class="copy-badge">✨ Klik untuk salin kolom 5 & 6</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('dynamicContent').innerHTML = html;
+    }
+
+    function openSearchModal(idx) {
+        let item = searchResults[idx]?.data;
+        let sheetName = searchResults[idx]?.sheet;
+        if(!item) return;
+        
+        const valuesArray = Object.values(item);
+        const keysArray = Object.keys(item);
+        let col5 = valuesArray[4] !== undefined ? valuesArray[4] : "";
+        let col6 = valuesArray[5] !== undefined ? valuesArray[5] : "";
+        let label5 = keysArray[4] || "Kolom 5";
+        let label6 = keysArray[5] || "Kolom 6";
+        
+        let modalBody = document.getElementById('modalCopyContent');
+        modalBody.innerHTML = `
+            <div style="margin-bottom:16px; font-size:12px; color:var(--text-secondary);">📄 Dari: <strong>${escapeHtml(sheetName)}</strong></div>
+            <div class="copy-col" id="copyCol5Btn">
+                <div class="col-label">📋 ${escapeHtml(label5)} (Kolom 5)</div>
+                <div class="col-value">${escapeHtml(String(col5)) || '-'}</div>
+            </div>
+            <div class="copy-col" id="copyCol6Btn">
+                <div class="col-label">📋 ${escapeHtml(label6)} (Kolom 6)</div>
+                <div class="col-value">${escapeHtml(String(col6)) || '-'}</div>
+            </div>
+            <div style="font-size:11px; color:var(--text-secondary); margin-top:12px; text-align:center;">✨ Klik pada kotak untuk menyalin teks</div>
+        `;
+        document.getElementById('copyModal').classList.add('active');
+        
+        document.getElementById('copyCol5Btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyText(String(col5), label5);
+        });
+        document.getElementById('copyCol6Btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyText(String(col6), label6);
+        });
+    }
+
+    // Auto Refresh 60 Menit
+    function startAutoRefresh() {
+        if(autoRefreshInterval) clearInterval(autoRefreshInterval);
+        autoRefreshInterval = setInterval(() => {
+            if(!isLoading) loadAllData(false, false);
+        }, 60 * 60 * 1000);
+    }
+    
+    // Manual full refresh (bypass cache, force ambil data terbaru dari server)
+    async function fullRefresh() {
+        if(isLoading) { showToast("⏳ Masih memuat data..."); return; }
+        showToast("🔄 Memperbarui data dari server...");
+        await loadAllData(true, true);
+    }
+
+    // Mobile Functions
+    function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('mobileOverlay').classList.add('active'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobileOverlay').classList.remove('active'); }
+    function closeModal() { document.getElementById('copyModal').classList.remove('active'); }
+    
+    window.renderSheetData = renderSheetData;
+    window.openCopyModal = openCopyModal;
+    window.openSearchModal = openSearchModal;
+    window.renderDashboard = renderDashboard;
+    window.closeModal = closeModal;
+    window.fullRefresh = fullRefresh;
+    window.loadAllData = loadAllData;
+
+    // Init
+    document.addEventListener('DOMContentLoaded', async () => {
+        applyTheme();
+        document.getElementById('themeToggleBtn').onclick = toggleTheme;
+        document.getElementById('refreshSidebarBtn').onclick = fullRefresh;
+        document.getElementById('refreshDataBtn').onclick = fullRefresh;
+        document.getElementById('mobileMenuBtn').onclick = openSidebar;
+        document.getElementById('mobileOverlay').onclick = closeSidebar;
+        
+        await loadAllData(false, false);
+        initSearch();
+        startAutoRefresh();
+        
+        window.addEventListener('resize', () => { if(window.innerWidth > 768) closeSidebar(); });
+    });
+</script>
+</body>
+</html>
