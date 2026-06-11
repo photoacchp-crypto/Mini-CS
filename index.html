@@ -1,18 +1,1835 @@
-const GOOGLE_DRIVE_FILES = [
-    {
-        id: "1ABC123xyz789",  // File ID dari Google Drive
-        title: "Panduan Digital Marketing",
-        author: "John Doe",
-        description: "Buku panduan lengkap tentang digital marketing dan strategi konten",
-        format: "pdf",  // atau "epub"
-        cover: "📘"
-    },
-    {
-        id: "1XYZ789abc456",
-        title: "Novel Petualangan",
-        author: "Jane Smith",
-        description: "Cerita petualangan seru di dunia digital",
-        format: "epub",
-        cover: "📖"
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+    <meta name="description" content="Creator Vault - Platform Digital Library untuk membaca ebook, artikel, dan materi digital lainnya">
+    <meta name="keywords" content="ebook, digital library, baca online, pdf reader, epub reader">
+    <meta name="author" content="Creator Vault">
+    <meta property="og:title" content="Creator Vault - Digital Library">
+    <meta property="og:description" content="Baca ebook dan artikel digital gratis">
+    <meta property="og:type" content="website">
+    <title>Creator Vault - Digital Library & Ebook Reader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* WhatsApp Color Theme - Professional Dashboard */
+        :root {
+            --bg-body: #e5ddd5;
+            --bg-header: #075e54;
+            --bg-header-dark: #054c44;
+            --bg-sidebar: #f0f2f5;
+            --bg-search: #ffffff;
+            --bg-message: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #111b21;
+            --text-secondary: #667781;
+            --border-light: #e9edef;
+            --accent: #25d366;
+            --accent-hover: #128c7e;
+            --accent-light: rgba(37, 211, 102, 0.1);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --hover-bg: #f5f5f5;
+            --context-bg: #ffffff;
+            --context-hover: #f0f2f5;
+            --gradient-header: linear-gradient(135deg, #075e54 0%, #0a6b5f 100%);
+            --reader-bg: #faf9f5;
+            --reader-text: #2c3e50;
+        }
+
+        /* Dark Theme */
+        body.dark {
+            --bg-body: #0a1014;
+            --bg-header: #202c33;
+            --bg-header-dark: #182229;
+            --bg-sidebar: #111b21;
+            --bg-search: #202c33;
+            --bg-message: #202c33;
+            --bg-card: #1e2a32;
+            --text-primary: #e9edef;
+            --text-secondary: #8696a0;
+            --border-light: #2a3942;
+            --hover-bg: #2a3942;
+            --context-bg: #233138;
+            --context-hover: #2e3b44;
+            --gradient-header: linear-gradient(135deg, #202c33 0%, #2a3942 100%);
+            --reader-bg: #1a1a2e;
+            --reader-text: #e0e0e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Roboto, system-ui, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* ========= LAYOUT UTAMA ========= */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        /* ========= SIDEBAR ========= */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 200;
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            background: var(--gradient-header);
+            padding: 24px 20px;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .logo-icon {
+            font-size: 28px;
+        }
+
+        .logo-text {
+            background: rgba(255,255,255,0.15);
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: normal;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .icon-btn {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255,255,255,0.25);
+            transform: scale(1.02);
+        }
+
+        .icon-btn.loading {
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* Search */
+        .search-container {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .search-wrapper {
+            background: var(--bg-search);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            gap: 10px;
+            border: 1px solid var(--border-light);
+            transition: all 0.2s;
+        }
+
+        .search-wrapper:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-light);
+        }
+
+        .search-icon {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            color: var(--text-primary);
+            outline: none;
+        }
+
+        .clear-search {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: none;
+            padding: 4px;
+        }
+
+        .clear-search.show {
+            display: block;
+        }
+
+        /* Menu List */
+        .menu-list {
+            flex: 1;
+            padding: 12px 0;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .menu-item:hover {
+            background: var(--hover-bg);
+        }
+
+        .menu-item.active {
+            background: var(--accent-light);
+            border-left: 3px solid var(--accent);
+        }
+
+        .menu-emoji {
+            font-size: 20px;
+            width: 32px;
+        }
+
+        .menu-name {
+            font-size: 14px;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .menu-badge {
+            font-size: 11px;
+            color: var(--text-secondary);
+            background: var(--bg-search);
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        .menu-separator {
+            padding: 16px 20px 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        /* ========= MAIN CONTENT ========= */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Header */
+        .top-header {
+            background: var(--gradient-header);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            font-size: 22px;
+            color: white;
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-info h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .header-info p {
+            font-size: 13px;
+            opacity: 0.85;
+            margin-top: 4px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Stats Cards */
+        .stats-wrapper {
+            padding: 24px 32px;
+            background: var(--bg-body);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid var(--border-light);
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--accent);
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        /* Data Card */
+        .data-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .card-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .btn-secondary {
+            background: var(--hover-bg);
+            border: 1px solid var(--border-light);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--accent-light);
+            border-color: var(--accent);
+        }
+
+        /* Messages List */
+        .messages-list {
+            padding: 8px 0;
+        }
+
+        .message-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 16px 24px;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .message-item:hover {
+            background: var(--hover-bg);
+        }
+
+        .message-avatar {
+            width: 48px;
+            height: 48px;
+            background: var(--accent-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .message-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .message-title-row {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+        }
+
+        .message-title {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .sheet-badge {
+            font-size: 10px;
+            color: var(--accent);
+            background: var(--accent-light);
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+
+        .message-preview {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .copy-badge {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Ebook Grid */
+        .ebooks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .ebook-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .ebook-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .ebook-cover {
+            background: linear-gradient(135deg, var(--accent-light), var(--bg-header));
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+            position: relative;
+        }
+
+        .ebook-format {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: white;
+        }
+
+        .ebook-info {
+            padding: 16px;
+        }
+
+        .ebook-title {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+
+        .ebook-author {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .ebook-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .read-btn {
+            margin-top: 12px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .read-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Reader Page */
+        .reader-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--reader-bg);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+        }
+
+        .reader-container.active {
+            display: flex;
+        }
+
+        .reader-header {
+            background: var(--bg-header);
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .reader-header .back-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .reader-header h2 {
+            flex: 1;
+            font-size: 18px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .reader-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .reader-controls button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .reader-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .pdf-viewer {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .epub-viewer {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--reader-bg);
+            color: var(--reader-text);
+            line-height: 1.8;
+            font-size: 18px;
+            padding: 40px;
+        }
+
+        /* Loading */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-light);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: var(--bg-card);
+            border-radius: 28px;
+            width: 100%;
+            max-width: 450px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: var(--bg-card);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .copy-col {
+            background: var(--hover-bg);
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 1px solid var(--border-light);
+        }
+
+        .copy-col:hover {
+            background: var(--accent-light);
+            border-color: var(--accent);
+        }
+
+        .col-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .col-value {
+            font-size: 14px;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-header-dark);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 13px;
+            z-index: 4000;
+            animation: fadeInUp 1.8s ease;
+            box-shadow: var(--shadow-md);
+        }
+
+        @keyframes fadeInUp {
+            0% { opacity: 0; bottom: 20px; }
+            15% { opacity: 1; bottom: 30px; }
+            85% { opacity: 1; bottom: 30px; }
+            100% { opacity: 0; bottom: 50px; }
+        }
+
+        /* Overlay */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 199;
+        }
+        .overlay.active {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 85%;
+                max-width: 300px;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .mobile-menu-btn {
+                display: flex;
+            }
+            .top-header {
+                padding: 12px 20px;
+            }
+            .stats-wrapper {
+                padding: 20px;
+            }
+            .content-area {
+                padding: 0 20px 20px 20px;
+            }
+            .ebooks-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .epub-viewer {
+                padding: 20px;
+                font-size: 16px;
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .sidebar {
+                width: 260px;
+            }
+            .main-content {
+                margin-left: 260px;
+            }
+            .ebooks-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Scrollbar */
+        .sidebar::-webkit-scrollbar,
+        .messages-list::-webkit-scrollbar,
+        .modal-card::-webkit-scrollbar,
+        .reader-content::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--text-secondary);
+            border-radius: 4px;
+        }
+    </style>
+    <!-- PDF.js untuk render PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- Epub.js untuk render EPUB -->
+    <script src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div>
+                <div class="logo">
+                    <span class="logo-icon">🏦</span>
+                    <span>Creator Vault</span>
+                </div>
+                <div class="logo-text">Digital Library</div>
+                <div class="sidebar-actions">
+                    <button class="icon-btn" id="themeToggleBtn">🌙</button>
+                    <button class="icon-btn" id="refreshSidebarBtn">🔄</button>
+                </div>
+            </div>
+        </div>
+        <div class="search-container">
+            <div class="search-wrapper">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="globalSearch" class="search-input" placeholder="Cari ebook atau artikel..." autocomplete="off">
+                <button class="clear-search" id="clearGlobalSearch">✕</button>
+            </div>
+        </div>
+        <div class="menu-list" id="databaseList"></div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="top-header">
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+            <div class="header-info">
+                <h1 id="pageTitle">Dashboard</h1>
+                <p id="pageSubtitle">Digital Library & Ebook Reader Platform</p>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" id="refreshDataBtn" style="background: rgba(255,255,255,0.2);">↻</button>
+            </div>
+        </div>
+
+        <div id="dynamicContent">
+            <div class="stats-wrapper"><div class="loading-spinner"></div></div>
+        </div>
+    </main>
+</div>
+
+<!-- Reader Container -->
+<div class="reader-container" id="readerContainer">
+    <div class="reader-header">
+        <button class="back-btn" onclick="closeReader()">←</button>
+        <h2 id="readerTitle">Membaca...</h2>
+        <div class="reader-controls">
+            <button id="zoomOutBtn" title="Perkecil">🔍-</button>
+            <button id="zoomInBtn" title="Perbesar">🔍+</button>
+        </div>
+    </div>
+    <div class="reader-content" id="readerContent">
+        <div class="loading-spinner"></div>
+    </div>
+</div>
+
+<div class="overlay" id="mobileOverlay"></div>
+
+<!-- Modal Copy -->
+<div class="modal" id="copyModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <span><strong>📋 Salin Data</strong></span>
+            <button onclick="closeModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-primary);">✕</button>
+        </div>
+        <div class="modal-body" id="modalCopyContent"></div>
+    </div>
+</div>
+
+<script>
+    // =========================================
+    // KONFIGURASI - SUMBER DATABASE
+    // =========================================
+    const API_URL = "https://script.google.com/macros/s/AKfycbymziyZ0ZS0syO0c8szOsE_nwCzQtTU07JlPFat0BYDey-OxiuqeSlyLvYlXqZ4gvdv/exec";
+    
+    // Konfigurasi Google Drive untuk file ebook
+    // Format: Daftar file dengan format { id: "FILE_ID", title: "Judul", author: "Penulis", description: "Deskripsi", format: "pdf/epub" }
+    const GOOGLE_DRIVE_FILES = [
+        // Contoh konfigurasi - SESUAIKAN DENGAN FILE ANDA
+        // { id: "1ABC123xyz", title: "Contoh Buku", author: "Penulis", description: "Deskripsi buku", format: "pdf" },
+        // { id: "1XYZ789abc", title: "Contoh Novel", author: "Pengarang", description: "Deskripsi novel", format: "epub" }
+    ];
+    
+    // State
+    let allSheetsData = {};
+    let sheetsList = [];
+    let currentSheet = null;
+    let currentDataItems = [];
+    let searchResults = [];
+    let isDark = localStorage.getItem('wa_dark') === 'true';
+    let isLoading = false;
+    let autoRefreshInterval = null;
+    let currentEbooks = [];
+    let currentPDFDoc = null;
+    let currentZoom = 1.0;
+    let currentRendition = null;
+
+    // Helper functions
+    function safeString(value) {
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'object') {
+            try {
+                return JSON.stringify(value);
+            } catch(e) {
+                return String(value);
+            }
+        }
+        return String(value);
     }
-];
+
+    function safeSubstring(text, maxLength = 80) {
+        const str = safeString(text);
+        if (str.length <= maxLength) return str;
+        return str.substring(0, maxLength) + '...';
+    }
+
+    // Theme
+    function applyTheme() {
+        if (isDark) document.body.classList.add('dark');
+        else document.body.classList.remove('dark');
+        const btn = document.getElementById('themeToggleBtn');
+        if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+        localStorage.setItem('wa_dark', isDark);
+    }
+    function toggleTheme() { isDark = !isDark; applyTheme(); }
+
+    function escapeHtml(str) { 
+        if(!str) return ''; 
+        return safeString(str).replace(/[&<>]/g, function(m){ 
+            if(m==='&') return '&amp;'; 
+            if(m==='<') return '&lt;'; 
+            if(m==='>') return '&gt;'; 
+            return m;
+        }); 
+    }
+    
+    function showToast(msg) {
+        let t = document.createElement('div'); 
+        t.className = 'toast'; 
+        t.innerText = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 1800);
+    }
+
+    async function copyText(text, label) {
+        try {
+            const textToCopy = safeString(text);
+            await navigator.clipboard.writeText(textToCopy);
+            showToast(`✅ ${label} tersalin!`);
+        } catch(e) { 
+            showToast(`❌ Gagal salin`); 
+        }
+    }
+
+    function setRefreshLoading(loading) {
+        const btns = ['refreshDataBtn', 'refreshSidebarBtn'];
+        btns.forEach(id => {
+            const btn = document.getElementById(id);
+            if(btn) {
+                if(loading) btn.classList.add('loading');
+                else btn.classList.remove('loading');
+            }
+        });
+    }
+
+    // API Functions
+    async function getSheets() {
+        try {
+            let res = await fetch(`${API_URL}?action=sheets`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            let data = await res.json();
+            if(Array.isArray(data)) return data;
+            if(data && Array.isArray(data.sheets)) return data.sheets;
+            return [];
+        } catch(e) { 
+            console.error("Get sheets error:", e);
+            return []; 
+        }
+    }
+    
+    async function getSheetData(sheetName) {
+        try {
+            let res = await fetch(`${API_URL}?action=data&sheet=${encodeURIComponent(sheetName)}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            let data = await res.json();
+            
+            if(Array.isArray(data) && data.length > 0 && Array.isArray(data[0])) {
+                let headers = data[0];
+                let rows = data.slice(1);
+                return rows.map(row => {
+                    let obj = {};
+                    headers.forEach((h, i) => {
+                        const value = (row[i] !== undefined && row[i] !== null) ? row[i] : "";
+                        obj[h] = value;
+                    });
+                    return obj;
+                });
+            }
+            
+            if(Array.isArray(data)) {
+                return data.map(item => {
+                    if (typeof item === 'object' && item !== null) return item;
+                    return { value: safeString(item) };
+                });
+            }
+            
+            return [];
+        } catch(e) { 
+            console.error(`Error fetching sheet ${sheetName}:`, e);
+            return []; 
+        }
+    }
+
+    // Load all data
+    async function loadAllData(forceRefresh = false, showMsg = false) {
+        if(isLoading) {
+            if(showMsg) showToast("⏳ Masih memuat data...");
+            return;
+        }
+        
+        isLoading = true;
+        setRefreshLoading(true);
+        
+        try {
+            const newSheetsList = await getSheets();
+            if(!newSheetsList.length) {
+                throw new Error("Tidak ada sheet ditemukan.");
+            }
+            
+            const fetchPromises = newSheetsList.map(sheet => getSheetData(sheet));
+            const allResults = await Promise.all(fetchPromises);
+            
+            const newAllSheetsData = {};
+            newSheetsList.forEach((sheet, index) => {
+                newAllSheetsData[sheet] = Array.isArray(allResults[index]) ? allResults[index] : [];
+            });
+            
+            sheetsList = newSheetsList;
+            allSheetsData = newAllSheetsData;
+            
+            // Load ebooks dari Google Drive
+            await loadGoogleDriveEbooks();
+            
+            renderSidebar();
+            
+            if(currentSheet && allSheetsData[currentSheet]) {
+                renderSheetData(currentSheet);
+            } else {
+                renderDashboard();
+            }
+            
+            if(showMsg) showToast("✅ Data berhasil diperbarui");
+            
+        } catch(err) {
+            console.error("Load all data error:", err);
+            document.getElementById('dynamicContent').innerHTML = `
+                <div class="stats-wrapper">
+                    <div class="data-card">
+                        <div class="empty-state">
+                            <span style="font-size:48px;">⚠️</span>
+                            <p>Gagal terhubung ke database</p>
+                            <p style="font-size:12px; margin-top:8px;">${escapeHtml(err.message)}</p>
+                            <button onclick="loadAllData(true, true)" style="margin-top:16px; background:var(--accent); border:none; padding:10px 24px; border-radius:30px; color:white; cursor:pointer;">Coba Lagi</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            renderSidebar();
+        } finally { 
+            isLoading = false; 
+            setRefreshLoading(false);
+        }
+    }
+
+    // Load ebooks from Google Drive configuration
+    async function loadGoogleDriveEbooks() {
+        // Jika ada konfigurasi manual, gunakan itu
+        if (GOOGLE_DRIVE_FILES.length > 0) {
+            currentEbooks = GOOGLE_DRIVE_FILES;
+            return;
+        }
+        
+        // Alternatif: Ambil dari sheet "Ebook" di database
+        if (allSheetsData['Ebook'] && allSheetsData['Ebook'].length > 0) {
+            currentEbooks = allSheetsData['Ebook'].map(ebook => ({
+                id: ebook.file_id || ebook.id || '',
+                title: ebook.judul || ebook.title || 'Tanpa Judul',
+                author: ebook.penulis || ebook.author || 'Unknown',
+                description: ebook.deskripsi || ebook.description || '',
+                format: ebook.format || 'pdf',
+                cover: ebook.cover || '📚',
+                drive_url: ebook.drive_url || ''
+            })).filter(ebook => ebook.id || ebook.drive_url);
+        }
+    }
+
+    // Render Sidebar
+    function renderSidebar() {
+        let menuDiv = document.getElementById('databaseList');
+        if(!menuDiv) return;
+        
+        let icons = { 
+            "Ebook":"📚","Produk":"🛒","Pelanggan":"👥","TemplateChat":"💬",
+            "Affiliate":"🔗","PromptAI":"🧠","IdeKonten":"💡","Notes":"📝",
+            "ReadingProgress":"📖","Bookmarks":"🔖"
+        };
+        
+        let html = `<div class="menu-item" data-db="dashboard"><div class="menu-emoji">📊</div><div class="menu-name">Dashboard</div></div>`;
+        html += `<div class="menu-item" data-db="ebooks"><div class="menu-emoji">📚</div><div class="menu-name">Perpustakaan Ebook</div><div class="menu-badge">${currentEbooks.length}</div></div>`;
+        html += `<div class="menu-separator">━━ DATABASE ━━</div>`;
+        
+        if(sheetsList.length === 0) {
+            html += `<div class="empty-state" style="padding:20px;">Belum ada database</div>`;
+        } else {
+            sheetsList.forEach(sheet => {
+                let count = (allSheetsData[sheet] && Array.isArray(allSheetsData[sheet])) ? allSheetsData[sheet].length : 0;
+                html += `<div class="menu-item" data-db="${escapeHtml(sheet)}">
+                            <div class="menu-emoji">${icons[sheet] || "📄"}</div>
+                            <div class="menu-name">${escapeHtml(sheet)}</div>
+                            <div class="menu-badge">${count}</div>
+                         </div>`;
+            });
+        }
+        
+        menuDiv.innerHTML = html;
+        
+        document.querySelectorAll('.menu-item[data-db]').forEach(el => {
+            el.addEventListener('click', () => {
+                let db = el.getAttribute('data-db');
+                if(db === 'dashboard') renderDashboard();
+                else if(db === 'ebooks') renderEbookLibrary();
+                else renderSheetData(db);
+                if(window.innerWidth <= 768) closeSidebar();
+                document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+                el.classList.add('active');
+            });
+        });
+        
+        if(currentSheet && currentSheet !== 'ebooks') {
+            const activeMenu = Array.from(document.querySelectorAll('.menu-item[data-db]')).find(el => el.getAttribute('data-db') === currentSheet);
+            if(activeMenu) activeMenu.classList.add('active');
+        } else if(currentSheet === 'ebooks') {
+            const ebooksMenu = document.querySelector('.menu-item[data-db="ebooks"]');
+            if(ebooksMenu) ebooksMenu.classList.add('active');
+        } else {
+            const dashMenu = document.querySelector('.menu-item[data-db="dashboard"]');
+            if(dashMenu) dashMenu.classList.add('active');
+        }
+    }
+
+    // Render Dashboard
+    function renderDashboard() {
+        currentSheet = null;
+        let totalItems = 0;
+        Object.values(allSheetsData).forEach(data => {
+            if(Array.isArray(data)) totalItems += data.length;
+        });
+        
+        document.getElementById('pageTitle').innerHTML = 'Dashboard';
+        document.getElementById('pageSubtitle').innerHTML = 'Digital Library & Ebook Reader Platform';
+        
+        let html = `
+            <div class="stats-wrapper">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📁</div>
+                        <div class="stat-number">${sheetsList.length}</div>
+                        <div class="stat-label">Database Categories</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📄</div>
+                        <div class="stat-number">${totalItems}</div>
+                        <div class="stat-label">Total Items</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📚</div>
+                        <div class="stat-number">${currentEbooks.length}</div>
+                        <div class="stat-label">Ebook Tersedia</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🟢</div>
+                        <div class="stat-number">Online</div>
+                        <div class="stat-label">Status Terhubung</div>
+                    </div>
+                </div>
+                <div class="data-card">
+                    <div class="card-header">
+                        <h3>📚 Koleksi Ebook Terbaru</h3>
+                        <button class="btn-secondary" onclick="renderEbookLibrary()">Lihat Semua →</button>
+                    </div>
+                    <div class="ebooks-grid">
+                        ${currentEbooks.slice(0, 6).map(ebook => `
+                            <div class="ebook-card" onclick="openEbookReader('${escapeHtml(ebook.id)}', '${escapeHtml(ebook.format)}', '${escapeHtml(ebook.title)}', '${escapeHtml(ebook.drive_url)}')">
+                                <div class="ebook-cover">
+                                    <span>${ebook.cover || '📖'}</span>
+                                    <span class="ebook-format">${ebook.format.toUpperCase()}</span>
+                                </div>
+                                <div class="ebook-info">
+                                    <div class="ebook-title">${escapeHtml(ebook.title.substring(0, 40))}</div>
+                                    <div class="ebook-author">${escapeHtml(ebook.author)}</div>
+                                    <div class="ebook-desc">${escapeHtml(safeSubstring(ebook.description, 60))}</div>
+                                    <button class="read-btn" onclick="event.stopPropagation(); openEbookReader('${escapeHtml(ebook.id)}', '${escapeHtml(ebook.format)}', '${escapeHtml(ebook.title)}', '${escapeHtml(ebook.drive_url)}')">📖 Baca Sekarang</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                        ${currentEbooks.length === 0 ? '<div class="empty-state">Belum ada ebook. Tambahkan konfigurasi Google Drive di file GOOGLE_DRIVE_FILES</div>' : ''}
+                    </div>
+                </div>
+                <div class="data-card" style="margin-top:20px;">
+                    <div class="card-header">
+                        <h3>📊 Statistik per Database</h3>
+                    </div>
+                    <div class="messages-list">
+                        ${sheetsList.map(sheet => {
+                            const dataCount = (allSheetsData[sheet] && Array.isArray(allSheetsData[sheet])) ? allSheetsData[sheet].length : 0;
+                            return `
+                                <div class="message-item" style="cursor:pointer" onclick="renderSheetData('${escapeHtml(sheet)}')">
+                                    <div class="message-avatar">${iconsMap(sheet)}</div>
+                                    <div class="message-details">
+                                        <div class="message-title-row">
+                                            <span class="message-title">${escapeHtml(sheet)}</span>
+                                            <span class="sheet-badge">${dataCount} items</span>
+                                        </div>
+                                        <div class="message-preview">Klik untuk melihat detail dan menyalin data</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('dynamicContent').innerHTML = html;
+        
+        document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+        const dashMenu = document.querySelector('.menu-item[data-db="dashboard"]');
+        if(dashMenu) dashMenu.classList.add('active');
+    }
+
+    // Render Ebook Library
+    function renderEbookLibrary() {
+        currentSheet = 'ebooks';
+        document.getElementById('pageTitle').innerHTML = '📚 Perpustakaan Ebook';
+        document.getElementById('pageSubtitle').innerHTML = `${currentEbooks.length} ebook tersedia untuk dibaca`;
+        
+        let html = `
+            <div class="stats-wrapper">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📚</div>
+                        <div class="stat-number">${currentEbooks.length}</div>
+                        <div class="stat-label">Total Ebook</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📖</div>
+                        <div class="stat-number">${currentEbooks.filter(e => e.format === 'pdf').length}</div>
+                        <div class="stat-label">Format PDF</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📱</div>
+                        <div class="stat-number">${currentEbooks.filter(e => e.format === 'epub').length}</div>
+                        <div class="stat-label">Format EPUB</div>
+                    </div>
+                </div>
+                <div class="data-card">
+                    <div class="card-header">
+                        <h3>📚 Semua Ebook</h3>
+                        <button class="btn-secondary" onclick="renderDashboard()">← Kembali</button>
+                    </div>
+                    <div class="ebooks-grid">
+                        ${currentEbooks.map(ebook => `
+                            <div class="ebook-card" onclick="openEbookReader('${escapeHtml(ebook.id)}', '${escapeHtml(ebook.format)}', '${escapeHtml(ebook.title)}', '${escapeHtml(ebook.drive_url)}')">
+                                <div class="ebook-cover">
+                                    <span>${ebook.cover || '📖'}</span>
+                                    <span class="ebook-format">${ebook.format.toUpperCase()}</span>
+                                </div>
+                                <div class="ebook-info">
+                                    <div class="ebook-title">${escapeHtml(ebook.title)}</div>
+                                    <div class="ebook-author">${escapeHtml(ebook.author)}</div>
+                                    <div class="ebook-desc">${escapeHtml(safeSubstring(ebook.description, 80))}</div>
+                                    <button class="read-btn" onclick="event.stopPropagation(); openEbookReader('${escapeHtml(ebook.id)}', '${escapeHtml(ebook.format)}', '${escapeHtml(ebook.title)}', '${escapeHtml(ebook.drive_url)}')">📖 Baca Sekarang</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                        ${currentEbooks.length === 0 ? '<div class="empty-state">📭 Belum ada ebook. Silakan tambahkan file Google Drive Anda.</div>' : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('dynamicContent').innerHTML = html;
+        
+        document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+        const ebooksMenu = document.querySelector('.menu-item[data-db="ebooks"]');
+        if(ebooksMenu) ebooksMenu.classList.add('active');
+    }
+
+    function iconsMap(sheet) {
+        const icons = {"Ebook":"📚","Produk":"🛒","Pelanggan":"👥","TemplateChat":"💬","Affiliate":"🔗","PromptAI":"🧠","IdeKonten":"💡","Notes":"📝"};
+        return icons[sheet] || "📄";
+    }
+
+    // Ebook Reader Functions
+    async function openEbookReader(fileId, format, title, driveUrl) {
+        const readerContainer = document.getElementById('readerContainer');
+        const readerTitle = document.getElementById('readerTitle');
+        const readerContent = document.getElementById('readerContent');
+        
+        readerTitle.textContent = title;
+        readerContainer.classList.add('active');
+        readerContent.innerHTML = '<div class="loading-spinner"></div>';
+        
+        try {
+            let fileUrl;
+            if (driveUrl) {
+                fileUrl = driveUrl;
+            } else if (fileId) {
+                if (format === 'pdf') {
+                    fileUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+                } else {
+                    fileUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                }
+            } else {
+                throw new Error('URL atau ID file tidak tersedia');
+            }
+            
+            if (format === 'pdf') {
+                await renderPDF(fileUrl, readerContent);
+            } else if (format === 'epub') {
+                await renderEPUB(fileUrl, readerContent);
+            } else {
+                readerContent.innerHTML = `<div class="empty-state">❌ Format ${format} tidak didukung. Gunakan PDF atau EPUB.</div>`;
+            }
+        } catch (error) {
+            console.error('Error opening ebook:', error);
+            readerContent.innerHTML = `<div class="empty-state">❌ Gagal membuka ebook: ${error.message}<br><br>Pastikan file sudah di-share dengan akses "Siapa saja yang memiliki link dapat melihat"</div>`;
+        }
+    }
+    
+    async function renderPDF(url, container) {
+        try {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+            
+            const loadingTask = pdfjsLib.getDocument(url);
+            const pdf = await loadingTask.promise;
+            currentPDFDoc = pdf;
+            currentZoom = 1.0;
+            
+            const numPages = pdf.numPages;
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= numPages; i++) {
+                const page = await pdf.getPage(i);
+                const viewport = page.getViewport({ scale: currentZoom });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                canvas.style.width = '100%';
+                canvas.style.height = 'auto';
+                canvas.style.marginBottom = '10px';
+                canvas.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                await page.render(renderContext).promise;
+                container.appendChild(canvas);
+            }
+            
+            setupZoomControls(() => renderPDF(url, container));
+            
+        } catch (error) {
+            console.error('PDF render error:', error);
+            container.innerHTML = `<div class="empty-state">❌ Gagal memuat PDF. Pastikan file dapat diakses.</div>`;
+        }
+    }
+    
+    async function renderEPUB(url, container) {
+        try {
+            // CORS proxy untuk menghindari masalah CORS
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+            
+            const book = ePub(proxyUrl);
+            const rendition = book.renderTo(container, {
+                width: '100%',
+                height: '100%',
+                flow: 'scrolled-doc'
+            });
+            currentRendition = rendition;
+            
+            await rendition.display();
+            
+            // Styling untuk EPUB
+            const style = document.createElement('style');
+            style.textContent = `
+                .epub-container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    background: var(--reader-bg);
+                    color: var(--reader-text);
+                    font-family: Georgia, serif;
+                    line-height: 1.8;
+                }
+                .epub-container p {
+                    margin-bottom: 1em;
+                }
+            `;
+            container.appendChild(style);
+            
+        } catch (error) {
+            console.error('EPUB render error:', error);
+            container.innerHTML = `<div class="empty-state">❌ Gagal memuat EPUB. Format EPUB mungkin memerlukan konfigurasi CORS.</div>`;
+        }
+    }
+    
+    function setupZoomControls(renderCallback) {
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        
+        const newZoomIn = zoomInBtn.cloneNode(true);
+        const newZoomOut = zoomOutBtn.cloneNode(true);
+        zoomInBtn.parentNode.replaceChild(newZoomIn, zoomInBtn);
+        zoomOutBtn.parentNode.replaceChild(newZoomOut, zoomOutBtn);
+        
+        newZoomIn.onclick = () => {
+            if (currentPDFDoc) {
+                currentZoom = Math.min(currentZoom + 0.2, 3.0);
+                if (renderCallback) renderCallback();
+            }
+        };
+        newZoomOut.onclick = () => {
+            if (currentPDFDoc) {
+                currentZoom = Math.max(currentZoom - 0.2, 0.5);
+                if (renderCallback) renderCallback();
+            }
+        };
+    }
+    
+    function closeReader() {
+        const readerContainer = document.getElementById('readerContainer');
+        readerContainer.classList.remove('active');
+        const readerContent = document.getElementById('readerContent');
+        readerContent.innerHTML = '';
+        currentPDFDoc = null;
+        if (currentRendition) {
+            currentRendition.destroy();
+            currentRendition = null;
+        }
+    }
+
+    // Sheet Data functions
+    function getSafeValueFromItem(item, index, defaultValue = '') {
+        if (!item || typeof item !== 'object') return defaultValue;
+        const values = Object.values(item);
+        if (index >= 0 && index < values.length) {
+            return safeString(values[index]);
+        }
+        return defaultValue;
+    }
+
+    function getItemTitle(item) {
+        const firstValue = getSafeValueFromItem(item, 0, 'Tanpa judul');
+        return safeSubstring(firstValue, 50);
+    }
+
+    function getItemPreview(item) {
+        let preview = getSafeValueFromItem(item, 3);
+        if (!preview) preview = getSafeValueFromItem(item, 2);
+        if (!preview) preview = getSafeValueFromItem(item, 1);
+        return safeSubstring(preview, 80);
+    }
+
+    function renderSheetData(sheetName) {
+        if(!allSheetsData[sheetName] || !Array.isArray(allSheetsData[sheetName])) {
+            showToast(`⚠️ Database ${sheetName} tidak ditemukan`);
+            return;
+        }
+        
+        currentSheet = sheetName;
+        let data = allSheetsData[sheetName];
+        currentDataItems = data;
+        
+        document.getElementById('pageTitle').innerHTML = sheetName;
+        document.getElementById('pageSubtitle').innerHTML = `📊 ${data.length} item • Klik item untuk salin kolom 5 & 6`;
+        
+        if(!data.length) {
+            document.getElementById('dynamicContent').innerHTML = `<div class="stats-wrapper"><div class="data-card"><div class="empty-state">📭 Tidak ada data di ${escapeHtml(sheetName)}</div></div></div>`;
+            return;
+        }
+        
+        let html = `
+            <div class="stats-wrapper">
+                <div class="data-card">
+                    <div class="card-header">
+                        <h3>📋 Daftar Item - ${escapeHtml(sheetName)}</h3>
+                        <button class="btn-secondary" onclick="renderDashboard()">← Kembali</button>
+                    </div>
+                    <div class="messages-list">
+                        ${data.map((item, idx) => {
+                            const title = getItemTitle(item);
+                            const preview = getItemPreview(item);
+                            return `
+                                <div class="message-item" onclick="openCopyModal(${idx}, '${escapeHtml(sheetName)}')">
+                                    <div class="message-avatar">💬</div>
+                                    <div class="message-details">
+                                        <div class="message-title-row">
+                                            <span class="message-title">${escapeHtml(title)}</span>
+                                            <span class="sheet-badge">${escapeHtml(sheetName)}</span>
+                                        </div>
+                                        <div class="message-preview">${escapeHtml(preview)}</div>
+                                        <div class="copy-badge">✨ Klik untuk salin kolom 5 & 6</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('dynamicContent').innerHTML = html;
+        
+        document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+        const activeMenu = Array.from(document.querySelectorAll('.menu-item[data-db]')).find(el => el.getAttribute('data-db') === sheetName);
+        if(activeMenu) activeMenu.classList.add('active');
+    }
+
+    function openCopyModal(idx, sheetName) {
+        const item = allSheetsData[sheetName]?.[idx];
+        if(!item) {
+            showToast("❌ Data tidak ditemukan");
+            return;
+        }
+        
+        const keysArray = Object.keys(item);
+        const col5Value = getSafeValueFromItem(item, 4, '');
+        const col6Value = getSafeValueFromItem(item, 5, '');
+        const label5 = (keysArray[4] && keysArray[4] !== 'undefined') ? keysArray[4] : "Kolom 5";
+        const label6 = (keysArray[5] && keysArray[5] !== 'undefined') ? keysArray[5] : "Kolom 6";
+        
+        let modalBody = document.getElementById('modalCopyContent');
+        modalBody.innerHTML = `
+            <div style="margin-bottom:16px; font-size:12px; color:var(--text-secondary);">📄 Dari: <strong>${escapeHtml(sheetName)}</strong></div>
+            <div class="copy-col" id="copyCol5Btn">
+                <div class="col-label">📋 ${escapeHtml(label5)} (Kolom 5)</div>
+                <div class="col-value">${escapeHtml(col5Value) || '-'}</div>
+            </div>
+            <div class="copy-col" id="copyCol6Btn">
+                <div class="col-label">📋 ${escapeHtml(label6)} (Kolom 6)</div>
+                <div class="col-value">${escapeHtml(col6Value) || '-'}</div>
+            </div>
+            <div style="font-size:11px; color:var(--text-secondary); margin-top:12px; text-align:center;">✨ Klik pada kotak untuk menyalin teks</div>
+        `;
+        document.getElementById('copyModal').classList.add('active');
+        
+        const col5Btn = document.getElementById('copyCol5Btn');
+        const col6Btn = document.getElementById('copyCol6Btn');
+        
+        const newCol5Btn = col5Btn.cloneNode(true);
+        const newCol6Btn = col6Btn.cloneNode(true);
+        if(col5Btn) col5Btn.parentNode.replaceChild(newCol5Btn, col5Btn);
+        if(col6Btn) col6Btn.parentNode.replaceChild(newCol6Btn, col6Btn);
+        
+        newCol5Btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyText(col5Value, label5);
+        });
+        newCol6Btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyText(col6Value, label6);
+        });
+    }
+
+    // Search
+    let searchTimeout = null;
+    function initSearch() {
+        let input = document.getElementById('globalSearch');
+        let clearBtn = document.getElementById('clearGlobalSearch');
+        input.addEventListener('input', (e) => {
+            let kw = e.target.value.trim();
+            if(kw.length > 0) clearBtn.classList.add('show');
+            else clearBtn.classList.remove('show');
+            if(searchTimeout) clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if(kw.length === 0) {
+                    if(currentSheet === 'ebooks') renderEbookLibrary();
+                    else if(currentSheet) renderSheetData(currentSheet);
+                    else renderDashboard();
+                    return;
+                }
+                if(kw.length < 2) return;
+                performSearch(kw);
+            }, 300);
+        });
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            clearBtn.classList.remove('show');
+            input.focus();
+            if(currentSheet === 'ebooks') renderEbookLibrary();
+            else if(currentSheet) renderSheetData(currentSheet);
+            else renderDashboard();
+        });
+    }
+
+    async function performSearch(keyword) {
+        let results = [];
+        const searchLower = keyword.toLowerCase();
+        
+        // Search in ebooks
+        currentEbooks.forEach(ebook => {
+            if (ebook.title.toLowerCase().includes(searchLower) ||
+                ebook.author.toLowerCase().includes(searchLower) ||
+                ebook.description.toLowerCase().includes(searchLower)) {
+                results.push({ type: 'ebook', data: ebook, sheet: 'Ebook' });
+            }
+        });
+        
+        // Search in sheets
+        for(let [sheet, items] of Object.entries(allSheetsData)) {
+            if(!Array.isArray(items)) continue;
+            for(let it of items) {
+                let match = false;
+                if(it && typeof it === 'object') {
+                    match = Object.values(it).some(v => {
+                        const str = safeString(v);
+                        return str.toLowerCase().includes(searchLower);
+                    });
+                }
+                if(match) results.push({ type: 'data', data: it, sheet: sheet });
+            }
+        }
+        
+        searchResults = results;
+        document.getElementById('pageTitle').innerHTML = `🔍 Hasil: "${escapeHtml(keyword)}"`;
+        document.getElementById('pageSubtitle').innerHTML = `${results.length} item ditemukan`;
+        
+        let html = `
+            <div class="stats-wrapper">
+                <div class="data-card">
+                    <div class="card-header">
+                        <h3>🔍 Hasil Pencarian</h3>
+                        <button class="btn-secondary" onclick="renderDashboard()">← Kembali</button>
+                    </div>
+                    <div class="messages-list">
+                        ${results.length === 0 ? '<div class="empty-state">Tidak ada hasil ditemukan</div>' : results.map((res, idx) => {
+                            if (res.type === 'ebook') {
+                                return `
+                                    <div class="message-item" onclick="openEbookReader('${escapeHtml(res.data.id)}', '${escapeHtml(res.data.format)}', '${escapeHtml(res.data.title)}', '${escapeHtml(res.data.drive_url)}')">
+                                        <div class="message-avatar">📚</div>
+                                        <div class="message-details">
+                                            <div class="message-title-row">
+                                                <span class="message-title">${escapeHtml(res.data.title.substring(0, 50))}</span>
+                                                <span class="sheet-badge">Ebook</span>
+                                            </div>
+                                            <div class="message-preview">${escapeHtml(res.data.author)} - ${escapeHtml(safeSubstring(res.data.description, 60))}</div>
+                                            <div class="copy-badge">📖 Klik untuk membaca</div>
+                                        </div>
+                                    </div>
+                                `;
+                            } else {
+                                const title = getItemTitle(res.data);
+                                const preview = getItemPreview(res.data);
+                                return `
+                                    <div class="message-item" onclick="openSearchModal(${idx})">
+                                        <div class="message-avatar">🔍</div>
+                                        <div class="message-details">
+                                            <div class="message-title-row">
+                                                <span class="message-title">${escapeHtml(title)}</span>
+                                                <span class="sheet-badge">${escapeHtml(res.sheet)}</span>
+                                            </div>
+                                            <div class="message-preview">${escapeHtml(preview)}</div>
+                                            <div class="copy-badge">✨ Klik untuk salin kolom 5 & 6</div>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('dynamicContent').innerHTML = html;
+    }
+
+    function openSearchModal(idx) {
+        let result = searchResults[idx];
+        if (!result) return;
+        
+        if (result.type === 'ebook') {
+            openEbookReader(result.data.id, result.data.format, result.data.title, result.data.drive_url);
+            return;
+        }
+        
+        let item = result.data;
+        let sheetName = result.sheet;
+        
+        const keysArray = Object.keys(item);
+        const col5Value = getSafeValueFromItem(item, 4, '');
+        const col6Value = getSafeValueFromItem(item, 5, '');
+        const label5 = (keysArray[4] && keysArray[4] !== 'undefined') ? keysArray[4] : "Kolom 5";
+        const label6 = (keysArray[5] && keysArray[5] !== 'undefined') ? keysArray[5] : "Kolom 6";
+        
+        let modalBody = document.getElementById('modalCopyContent');
+        modalBody.innerHTML = `
+            <div style="margin-bottom:16px; font-size:12px; color:var(--text-secondary);">📄 Dari: <strong>${escapeHtml(sheetName)}</strong></div>
+            <div class="copy-col" id="copyCol5Btn">
+                <div class="col-label">📋 ${escapeHtml(label5)} (Kolom 5)</div>
+                <div class="col-value">${escapeHtml(col5Value) || '-'}</div>
+            </div>
+            <div class="copy-col" id="copyCol6Btn">
+                <div class="col-label">📋 ${escapeHtml(label6)} (Kolom 6)</div>
+                <div class="col-value">${escapeHtml(col6Value) || '-'}</div>
+            </div>
+            <div style="font-size:11px; color:var(--text-secondary); margin-top:12px; text-align:center;">✨ Klik pada kotak untuk menyalin teks</div>
+        `;
+        document.getElementById('copyModal').classList.add('active');
+        
+        const col5Btn = document.getElementById('copyCol5Btn');
+        const col6Btn = document.getElementById('copyCol6Btn');
+        
+        const newCol5Btn = col5Btn.cloneNode(true);
+        const newCol6Btn = col6Btn.cloneNode(true);
+        if(col5Btn) col5Btn.parentNode.replaceChild(newCol5Btn, col5Btn);
+        if(col6Btn) col6Btn.parentNode.replaceChild(newCol6Btn, col6Btn);
+        
+        newCol5Btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyText(col5Value, label5);
+        });
+        newCol6Btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyText(col6Value, label6);
+        });
+    }
+
+    // Auto Refresh
+    function startAutoRefresh() {
+        if(autoRefreshInterval) clearInterval(autoRefreshInterval);
+        autoRefreshInterval = setInterval(() => {
+            if(!isLoading) loadAllData(false, false);
+        }, 60 * 60 * 1000);
+    }
+    
+    async function fullRefresh() {
+        if(isLoading) { showToast("⏳ Masih memuat data..."); return; }
+        showToast("🔄 Memperbarui data dari server...");
+        await loadAllData(true, true);
+    }
+
+    // Mobile Functions
+    function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('mobileOverlay').classList.add('active'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobileOverlay').classList.remove('active'); }
+    function closeModal() { document.getElementById('copyModal').classList.remove('active'); }
+    
+    // Expose to global
+    window.renderSheetData = renderSheetData;
+    window.openCopyModal = openCopyModal;
+    window.openSearchModal = openSearchModal;
+    window.renderDashboard = renderDashboard;
+    window.renderEbookLibrary = renderEbookLibrary;
+    window.openEbookReader = openEbookReader;
+    window.closeReader = closeReader;
+    window.closeModal = closeModal;
+    window.fullRefresh = fullRefresh;
+    window.loadAllData = loadAllData;
+
+    // Init
+    document.addEventListener('DOMContentLoaded', async () => {
+        applyTheme();
+        document.getElementById('themeToggleBtn').onclick = toggleTheme;
+        document.getElementById('refreshSidebarBtn').onclick = fullRefresh;
+        document.getElementById('refreshDataBtn').onclick = fullRefresh;
+        document.getElementById('mobileMenuBtn').onclick = openSidebar;
+        document.getElementById('mobileOverlay').onclick = closeSidebar;
+        
+        await loadAllData(false, false);
+        initSearch();
+        startAutoRefresh();
+        
+        window.addEventListener('resize', () => { if(window.innerWidth > 768) closeSidebar(); });
+    });
+</script>
+</body>
+</html>
