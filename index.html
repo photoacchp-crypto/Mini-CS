@@ -1,93 +1,100 @@
+Berikut adalah kode HTML yang telah disederhanakan dengan tampilan seperti WhatsApp, ringan, multi-device, dengan fokus pada kemudahan copy kolom 5 & 6, serta perbaikan menu popup di mode gelap.
+
+```html
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Creator Vault - WhatsApp Style</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+    <title>Creator Vault - Simple Hub</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
+        /* WhatsApp Light Theme */
         :root {
-            --whatsapp-bg: #e5ddd5;
-            --whatsapp-dark-bg: #0a0a0a;
-            --chat-bg: #ffffff;
-            --chat-dark-bg: #1f2c34;
-            --bubble-in: #ffffff;
-            --bubble-in-dark: #202c33;
-            --bubble-out: #dcf8c5;
-            --bubble-out-dark: #005c4b;
+            --bg-body: #e5ddd5;
+            --bg-header: #075e54;
+            --bg-header-dark: #054c44;
+            --bg-sidebar: #f0f2f5;
+            --bg-search: #ffffff;
+            --bg-message: #ffffff;
+            --bg-message-out: #dcf8c5;
             --text-primary: #111b21;
             --text-secondary: #667781;
-            --text-dark: #e9edef;
-            --accent: #00a884;
-            --accent-dark: #00a884;
-            --border: #e9edef;
-            --border-dark: #2a3942;
-            --sidebar-bg: #111b21;
-            --sidebar-text: #e9edef;
-            --header-bg: #f0f2f5;
-            --header-dark: #202c33;
+            --border-light: #e9edef;
+            --accent: #25d366;
+            --accent-hover: #128c7e;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+            --hover-bg: #f5f5f5;
+        }
+
+        /* WhatsApp Dark Theme */
+        body.dark {
+            --bg-body: #0a1014;
+            --bg-header: #202c33;
+            --bg-header-dark: #182229;
+            --bg-sidebar: #111b21;
+            --bg-search: #202c33;
+            --bg-message: #202c33;
+            --bg-message-out: #005c4b;
+            --text-primary: #e9edef;
+            --text-secondary: #8696a0;
+            --border-light: #2a3942;
+            --hover-bg: #2a3942;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
-            background: var(--whatsapp-bg);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Roboto, sans-serif;
+            background: var(--bg-body);
             color: var(--text-primary);
-            transition: background 0.2s;
             height: 100vh;
             overflow: hidden;
         }
 
-        body.dark {
-            background: var(--whatsapp-dark-bg);
-            color: var(--text-dark);
-        }
-
-        /* Layout WhatsApp */
-        .app-container {
+        /* Main Layout */
+        .app {
             display: flex;
             height: 100vh;
             max-width: 1400px;
             margin: 0 auto;
-            background: inherit;
+            background: var(--bg-body);
         }
 
-        /* Sidebar seperti WhatsApp */
+        /* Sidebar (Contact List Style) */
         .sidebar {
             width: 320px;
-            background: var(--sidebar-bg);
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-light);
             display: flex;
             flex-direction: column;
-            border-right: 1px solid rgba(255,255,255,0.1);
-            transition: transform 0.3s ease;
-            z-index: 100;
-        }
-
-        body.dark .sidebar {
-            background: #111b21;
+            transition: transform 0.25s ease;
+            z-index: 200;
         }
 
         .sidebar-header {
-            padding: 20px 16px;
-            background: var(--header-dark);
+            background: var(--bg-header);
+            padding: 16px 20px;
+            color: white;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-shrink: 0;
         }
 
-        .sidebar-header h2 {
-            font-size: 19px;
+        .logo {
             font-weight: 600;
-            color: var(--sidebar-text);
+            font-size: 18px;
+            letter-spacing: -0.3px;
         }
 
-        .sidebar-actions {
+        .header-actions {
             display: flex;
-            gap: 16px;
+            gap: 12px;
         }
 
         .icon-btn {
@@ -95,221 +102,273 @@
             border: none;
             font-size: 20px;
             cursor: pointer;
-            color: var(--sidebar-text);
-            padding: 4px;
-        }
-
-        /* Database List */
-        .database-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px 0;
-        }
-
-        .db-item {
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            cursor: pointer;
+            justify-content: center;
             transition: background 0.2s;
-            color: var(--sidebar-text);
         }
 
-        .db-item:hover {
-            background: rgba(255,255,255,0.08);
+        .icon-btn:hover {
+            background: rgba(255,255,255,0.15);
         }
 
-        .db-item.active {
-            background: rgba(255,255,255,0.12);
-        }
-
-        .db-icon {
-            font-size: 24px;
-        }
-
-        .db-info {
-            flex: 1;
-        }
-
-        .db-name {
-            font-weight: 500;
-            font-size: 15px;
-        }
-
-        .db-count {
-            font-size: 11px;
-            opacity: 0.6;
-            margin-top: 2px;
-        }
-
-        /* Main Chat Area */
-        .main-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: var(--chat-bg);
-            position: relative;
-        }
-
-        body.dark .main-area {
-            background: var(--chat-dark-bg);
-        }
-
-        /* Chat Header */
-        .chat-header {
-            padding: 12px 20px;
-            background: var(--header-bg);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        body.dark .chat-header {
-            background: var(--header-dark);
-            border-bottom-color: var(--border-dark);
-        }
-
-        .chat-header h1 {
-            font-size: 18px;
-            font-weight: 500;
-        }
-
-        .header-buttons {
-            display: flex;
-            gap: 12px;
-        }
-
-        /* Search Bar seperti WA */
-        .search-bar {
-            padding: 8px 16px;
-            background: var(--header-bg);
-            border-bottom: 1px solid var(--border);
-        }
-
-        body.dark .search-bar {
-            background: var(--header-dark);
-            border-bottom-color: var(--border-dark);
+        /* Search */
+        .search-box-container {
+            padding: 12px;
+            background: var(--bg-sidebar);
+            border-bottom: 1px solid var(--border-light);
         }
 
         .search-wrapper {
-            background: var(--chat-bg);
+            background: var(--bg-search);
             border-radius: 20px;
-            padding: 6px 16px;
             display: flex;
             align-items: center;
+            padding: 6px 12px;
             gap: 8px;
-            border: 1px solid var(--border);
-        }
-
-        body.dark .search-wrapper {
-            background: #2a3942;
-            border-color: var(--border-dark);
+            border: 1px solid transparent;
         }
 
         .search-wrapper span {
-            font-size: 16px;
             color: var(--text-secondary);
+            font-size: 16px;
         }
 
-        .search-wrapper input {
+        .search-input {
             flex: 1;
             border: none;
             background: transparent;
-            padding: 8px 0;
             font-size: 14px;
+            color: var(--text-primary);
             outline: none;
-            color: inherit;
+            padding: 8px 0;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-secondary);
         }
 
         .clear-search {
             background: none;
             border: none;
+            font-size: 16px;
             cursor: pointer;
             color: var(--text-secondary);
-            font-size: 16px;
             display: none;
+            padding: 4px;
         }
 
-        /* Messages Container (seperti chat WA) */
+        .clear-search.show {
+            display: block;
+        }
+
+        /* Database Menu List */
+        .menu-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .menu-item:hover {
+            background: var(--hover-bg);
+        }
+
+        .menu-item.active {
+            background: rgba(37, 211, 102, 0.15);
+            border-left: 3px solid var(--accent);
+        }
+
+        .menu-emoji {
+            font-size: 22px;
+            width: 40px;
+            text-align: center;
+        }
+
+        .menu-name {
+            font-size: 14px;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .menu-badge {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .menu-separator {
+            padding: 12px 16px 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        /* Main Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-body);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: var(--bg-header);
+            padding: 12px 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .back-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .chat-title {
+            font-size: 16px;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .chat-sub {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        /* Messages Container */
         .messages-container {
             flex: 1;
             overflow-y: auto;
-            padding: 16px 20px;
-            background-image: radial-gradient(circle at 10% 30%, rgba(0,0,0,0.02) 2%, transparent 2.5%);
-            background-size: 28px 28px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background-image: radial-gradient(var(--border-light) 1px, transparent 1px);
+            background-size: 20px 20px;
         }
 
-        /* Chat Bubble Item */
-        .chat-item {
+        /* Message Bubble */
+        .message-row {
             display: flex;
-            margin-bottom: 12px;
             cursor: pointer;
             animation: fadeIn 0.2s ease;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .chat-avatar {
-            width: 48px;
-            height: 48px;
-            background: var(--accent);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            margin-right: 12px;
-            flex-shrink: 0;
-            color: white;
-        }
-
-        .chat-bubble {
-            flex: 1;
-            background: var(--bubble-in);
+        .message-bubble {
+            max-width: 85%;
+            background: var(--bg-message);
             border-radius: 18px;
             padding: 10px 14px;
-            max-width: 75%;
-            box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.1s;
+            border: 1px solid var(--border-light);
         }
 
-        body.dark .chat-bubble {
-            background: var(--bubble-in-dark);
+        .message-row:hover .message-bubble {
+            background: var(--hover-bg);
         }
 
-        .chat-title {
+        .message-sheet-badge {
+            font-size: 10px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: 0.3px;
+        }
+
+        .message-title {
             font-weight: 600;
             font-size: 14px;
             margin-bottom: 6px;
-            display: flex;
-            align-items: baseline;
-            gap: 8px;
-            flex-wrap: wrap;
+            word-break: break-word;
         }
 
-        .sheet-badge {
-            font-size: 9px;
-            background: var(--accent);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-        }
-
-        .chat-preview {
+        .message-preview {
             font-size: 13px;
             color: var(--text-secondary);
             line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+            word-break: break-word;
         }
 
-        /* Modal untuk detail (WA Style) */
+        .copy-hint {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            text-align: right;
+            opacity: 0.6;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border-light);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Context Menu (WA Style) */
+        .context-menu {
+            position: fixed;
+            background: var(--bg-message);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 3000;
+            overflow: hidden;
+            min-width: 180px;
+            border: 1px solid var(--border-light);
+            backdrop-filter: blur(0px);
+        }
+
+        .context-menu-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--text-primary);
+            background: var(--bg-message);
+        }
+
+        .context-menu-item:hover {
+            background: var(--hover-bg);
+        }
+
+        /* Modal Detail */
         .modal {
             display: none;
             position: fixed;
@@ -317,10 +376,11 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 1000;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
 
         .modal.active {
@@ -328,746 +388,517 @@
         }
 
         .modal-card {
-            background: var(--chat-bg);
-            border-radius: 28px;
-            max-width: 480px;
-            width: 90%;
+            background: var(--bg-message);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 400px;
             max-height: 80vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        body.dark .modal-card {
-            background: var(--chat-dark-bg);
+            overflow-y: auto;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.2);
         }
 
         .modal-header {
-            padding: 18px 20px;
-            background: var(--header-bg);
-            border-bottom: 1px solid var(--border);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-light);
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
-        }
-
-        body.dark .modal-header {
-            background: var(--header-dark);
-            border-bottom-color: var(--border-dark);
-        }
-
-        .modal-header h3 {
-            font-size: 17px;
-            font-weight: 500;
-        }
-
-        .close-modal-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--text-secondary);
-            padding: 0 8px;
+            background: var(--bg-message);
         }
 
         .modal-body {
             padding: 16px;
-            overflow-y: auto;
         }
 
-        /* Dua Kolom yang bisa dicopy (Kolom 5 & 6) */
-        .copyable-row {
-            background: var(--bubble-in);
+        .copy-col {
+            background: var(--hover-bg);
             border-radius: 14px;
-            padding: 14px;
+            padding: 12px;
             margin-bottom: 12px;
             cursor: pointer;
-            transition: all 0.15s;
-            border: 1px solid var(--border);
+            transition: all 0.1s;
+            border: 1px solid var(--border-light);
         }
 
-        body.dark .copyable-row {
-            background: #2a3942;
-            border-color: var(--border-dark);
+        .copy-col:hover {
+            background: var(--bg-search);
+            transform: scale(0.99);
         }
 
-        .copyable-row:hover {
-            background: var(--accent);
-            color: white;
-            transform: scale(1.01);
-        }
-
-        .copyable-label {
+        .col-label {
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--accent);
+            text-transform: uppercase;
             margin-bottom: 6px;
-            letter-spacing: 0.5px;
         }
 
-        .copyable-value {
+        .col-value {
             font-size: 14px;
             word-break: break-word;
-            line-height: 1.5;
-            font-weight: 500;
+            line-height: 1.4;
         }
 
-        /* Info row lainnya (tidak bisa copy) */
-        .info-row {
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        body.dark .info-row {
-            border-bottom-color: var(--border-dark);
-        }
-
-        .info-label {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-        }
-
-        .info-value {
-            font-size: 14px;
-        }
-
-        /* Loading */
-        .loading-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            gap: 16px;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--border);
-            border-top: 3px solid var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Toast */
-        .toast-message {
+        .toast {
             position: fixed;
-            bottom: 30px;
+            bottom: 70px;
             left: 50%;
             transform: translateX(-50%);
-            background: var(--accent);
+            background: var(--bg-header-dark);
             color: white;
-            padding: 10px 20px;
+            padding: 8px 18px;
             border-radius: 30px;
             font-size: 13px;
-            z-index: 1100;
-            animation: fadeOut 2s ease forwards;
+            z-index: 4000;
+            animation: fadeInUp 1.5s ease;
+            white-space: nowrap;
         }
 
-        @keyframes fadeOut {
-            0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
-            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            85% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        @keyframes fadeInUp {
+            0% { opacity: 0; bottom: 40px; }
+            15% { opacity: 1; bottom: 70px; }
+            85% { opacity: 1; bottom: 70px; }
+            100% { opacity: 0; bottom: 90px; }
         }
 
         /* Mobile */
-        .mobile-menu-btn {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--accent);
-            width: 56px;
-            height: 56px;
-            border-radius: 28px;
-            border: none;
-            font-size: 24px;
-            color: white;
-            cursor: pointer;
-            z-index: 200;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-
-        @media (max-width: 768px) {
+        @media (max-width: 680px) {
             .sidebar {
                 position: fixed;
                 left: 0;
                 top: 0;
                 bottom: 0;
+                width: 85%;
+                max-width: 300px;
                 transform: translateX(-100%);
-                width: 280px;
-                z-index: 300;
+                z-index: 1000;
             }
             .sidebar.open {
                 transform: translateX(0);
             }
-            .mobile-menu-btn {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .sidebar-overlay {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0,0,0,0.5);
-                z-index: 250;
-            }
-            .sidebar-overlay.active {
+            .back-btn {
                 display: block;
             }
-            .chat-bubble {
-                max-width: 90%;
+            .chat-header {
+                padding: 12px 16px;
             }
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(0,0,0,0.2);
-            border-radius: 3px;
+            .message-bubble {
+                max-width: 95%;
+            }
+            .overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.4);
+                z-index: 999;
+            }
+            .overlay.active {
+                display: block;
+            }
         }
     </style>
 </head>
 <body>
-
-<button class="mobile-menu-btn" id="mobileMenuBtn">💬</button>
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-<div class="app-container">
-    <!-- Sidebar Database -->
+<div class="app">
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>🏦 Creator Vault</h2>
-            <div class="sidebar-actions">
+            <div class="logo">💬 Creator Vault</div>
+            <div class="header-actions">
                 <button class="icon-btn" id="themeToggleBtn">🌙</button>
                 <button class="icon-btn" id="refreshSidebarBtn">🔄</button>
             </div>
         </div>
-        <div class="database-list" id="databaseList">
-            <div class="loading-state" style="padding: 20px;"><div class="spinner"></div></div>
-        </div>
-    </aside>
-
-    <!-- Main Chat Area -->
-    <main class="main-area">
-        <div class="chat-header">
-            <h1 id="currentTitle">Dashboard</h1>
-            <div class="header-buttons">
-                <button class="icon-btn" id="refreshMainBtn" title="Refresh Data">🔄</button>
-            </div>
-        </div>
-        
-        <div class="search-bar">
+        <div class="search-box-container">
             <div class="search-wrapper">
                 <span>🔍</span>
-                <input type="text" id="searchInput" placeholder="Cari pesan atau konten..." autocomplete="off">
-                <button class="clear-search" id="clearSearchBtn">✕</button>
+                <input type="text" id="globalSearch" class="search-input" placeholder="Cari pesan atau database..." autocomplete="off">
+                <button class="clear-search" id="clearGlobalSearch">✕</button>
             </div>
         </div>
+        <div class="menu-list" id="databaseList"></div>
+    </aside>
 
+    <main class="chat-area">
+        <div class="chat-header">
+            <button class="back-btn" id="backToSidebar">←</button>
+            <div>
+                <div class="chat-title" id="chatTitle">Dashboard</div>
+                <div class="chat-sub" id="chatSubtitle">Klik item untuk lihat & salin</div>
+            </div>
+            <div style="flex:1"></div>
+            <button class="icon-btn" id="refreshDataBtn" style="background: rgba(255,255,255,0.1);">↻</button>
+        </div>
         <div class="messages-container" id="messagesContainer">
-            <div class="loading-state">
-                <div class="spinner"></div>
-                <p>Memuat database...</p>
+            <div class="empty-state">
+                <div class="loading-spinner"></div>
+                <p>Memuat data dari database...</p>
             </div>
         </div>
     </main>
 </div>
+<div class="overlay" id="mobileOverlay"></div>
 
-<!-- Modal Detail WhatsApp Style -->
-<div class="modal" id="detailModal">
+<!-- Modal Copy Khusus Kolom 5 & 6 -->
+<div class="modal" id="copyModal">
     <div class="modal-card">
         <div class="modal-header">
-            <h3 id="modalTitle">Detail Item</h3>
-            <button class="close-modal-btn" onclick="closeModal()">✕</button>
+            <span><strong>📋 Salin Data</strong></span>
+            <button onclick="closeModal()" style="background:none;border:none;font-size:22px;cursor:pointer;">✕</button>
         </div>
-        <div class="modal-body" id="modalBody">
-            <!-- Dinamis -->
+        <div class="modal-body" id="modalCopyContent">
+            <!-- Kolom 5 & 6 akan di render disini -->
         </div>
     </div>
 </div>
 
 <script>
-    // ========================================
-    // KONFIGURASI - SUMBER DATABASE PERTAMA
-    // ========================================
+    // =========================================
+    // KONFIGURASI - SUMBER DATABASE PERTAMA (TIDAK DIRUBAH)
+    // =========================================
     const API_URL = "https://script.google.com/macros/s/AKfycbymziyZ0ZS0syO0c8szOsE_nwCzQtTU07JlPFat0BYDey-OxiuqeSlyLvYlXqZ4gvdv/exec";
     
-    // Global State
+    // State
     let allSheetsData = {};
     let sheetsList = [];
+    let currentView = "dashboard";
     let currentSheet = null;
-    let currentData = [];
-    let lastSearchResults = [];
+    let currentDataItems = [];
+    let searchResults = [];
+    let isDark = localStorage.getItem('wa_dark') === 'true';
     let isLoading = false;
-    let isDark = localStorage.getItem('wa_theme') === 'dark';
+
+    // ========== THEME ==========
+    function applyTheme() {
+        if (isDark) document.body.classList.add('dark');
+        else document.body.classList.remove('dark');
+        const btn = document.getElementById('themeToggleBtn');
+        if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+        localStorage.setItem('wa_dark', isDark);
+    }
+    function toggleTheme() { isDark = !isDark; applyTheme(); }
+
+    // ========== UTILS ==========
+    function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
     
-    // ========================================
-    // FUNGSI API (SAMA PERSIS SUMBER PERTAMA)
-    // ========================================
+    function showToast(msg) {
+        let t = document.createElement('div'); t.className = 'toast'; t.innerText = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 1800);
+    }
+
+    async function copyText(text, label) {
+        try {
+            await navigator.clipboard.writeText(text);
+            showToast(`✅ ${label} tersalin!`);
+        } catch(e) { showToast('❌ Gagal salin'); }
+    }
+
+    // Context Menu Sederhana
+    let activeMenu = null;
+    function showContextMenu(event, text, labelName) {
+        event.stopPropagation();
+        if(activeMenu) activeMenu.remove();
+        let menu = document.createElement('div');
+        menu.className = 'context-menu';
+        menu.style.left = event.clientX + 'px';
+        menu.style.top = event.clientY + 'px';
+        menu.innerHTML = `<div class="context-menu-item">📋 Salin ${labelName}</div>`;
+        menu.firstChild.onclick = async (e) => {
+            e.stopPropagation();
+            await copyText(text, labelName);
+            menu.remove(); activeMenu = null;
+        };
+        document.body.appendChild(menu);
+        activeMenu = menu;
+        setTimeout(() => {
+            document.addEventListener('click', function removeMenu(){ if(activeMenu){ activeMenu.remove(); activeMenu=null; } document.removeEventListener('click', removeMenu); }, { once: true });
+        }, 10);
+    }
+
+    // ========== API (SAMA PERSIS DENGAN DATABASE PERTAMA) ==========
     async function getSheets() {
         try {
-            const res = await fetch(`${API_URL}?action=sheets`);
-            if (!res.ok) throw new Error();
-            const data = await res.json();
-            if (Array.isArray(data)) return data;
-            if (data && Array.isArray(data.sheets)) return data.sheets;
-            if (data && Array.isArray(data.data)) return data.data;
+            let res = await fetch(`${API_URL}?action=sheets`);
+            let data = await res.json();
+            if(Array.isArray(data)) return data;
+            if(data && Array.isArray(data.sheets)) return data.sheets;
             return [];
-        } catch (e) {
-            console.error(e);
-            return [];
-        }
+        } catch(e) { return []; }
     }
-    
     async function getSheetData(sheetName) {
         try {
-            const res = await fetch(`${API_URL}?action=data&sheet=${encodeURIComponent(sheetName)}`);
-            const data = await res.json();
-            if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0])) {
-                const headers = data[0];
-                const rows = data.slice(1);
+            let res = await fetch(`${API_URL}?action=data&sheet=${encodeURIComponent(sheetName)}`);
+            let data = await res.json();
+            if(Array.isArray(data) && data.length && Array.isArray(data[0])) {
+                let headers = data[0];
+                let rows = data.slice(1);
                 return rows.map(row => {
-                    const obj = {};
-                    headers.forEach((h, idx) => obj[h] = row[idx] || "");
+                    let obj = {};
+                    headers.forEach((h,i) => obj[h] = row[i] || "");
                     return obj;
                 });
             }
             return Array.isArray(data) ? data : [];
-        } catch (e) {
-            return [];
-        }
+        } catch(e) { return []; }
     }
-    
-    // ========================================
-    // LOAD SEMUA DATA (Reload penuh saat pertama buka)
-    // ========================================
-    async function loadAllData(showToastMsg = false) {
-        if (isLoading) return;
+
+    // ========== LOAD SEMUA DATA (FIRST OPEN & REFRESH) ==========
+    async function loadAllData(showMsg = false) {
+        if(isLoading) return;
         isLoading = true;
-        
         const container = document.getElementById('messagesContainer');
-        if (container && !currentSheet) {
-            container.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>🔄 Mengambil data dari server...</p></div>`;
-        }
+        if(container && currentView === 'dashboard') container.innerHTML = `<div class="empty-state"><div class="loading-spinner"></div><p>Memuat database...</p></div>`;
         
         try {
             sheetsList = await getSheets();
-            if (!sheetsList.length) throw new Error("Tidak ada database");
-            
-            const promises = sheetsList.map(async sheet => {
-                const data = await getSheetData(sheet);
-                return { sheet, data };
-            });
-            const results = await Promise.all(promises);
+            if(!sheetsList.length) throw new Error("Tidak ada sheet");
             allSheetsData = {};
-            results.forEach(r => { allSheetsData[r.sheet] = r.data; });
-            
-            renderDatabaseList();
-            
-            // Default: pilih sheet pertama atau dashboard
-            if (sheetsList.length > 0) {
-                await loadSheet(sheetsList[0]);
-            } else {
-                showEmptyState();
+            for(let sheet of sheetsList) {
+                let data = await getSheetData(sheet);
+                allSheetsData[sheet] = data;
             }
-            
-            if (showToastMsg) showToast("✅ Data berhasil dimuat ulang");
-        } catch (err) {
+            renderSidebar();
+            if(showMsg) showToast("Data terbaru ✅");
+            // Tampilkan dashboard setelah load
+            showDashboard();
+        } catch(err) {
             console.error(err);
-            if (container) {
-                container.innerHTML = `<div class="loading-state"><p>⚠️ Gagal koneksi ke database</p><button class="icon-btn" onclick="location.reload()" style="margin-top:12px;">🔄 Coba Lagi</button></div>`;
-            }
-        } finally {
-            isLoading = false;
-        }
+            if(container) container.innerHTML = `<div class="empty-state"><span>⚠️ Gagal konek database</span><button id="retryLoadBtn" style="margin-top:12px; background:var(--accent); border:none; padding:8px 20px; border-radius:20px; color:white;">Coba Lagi</button></div>`;
+            const retry = document.getElementById('retryLoadBtn');
+            if(retry) retry.onclick = () => loadAllData(true);
+        } finally { isLoading = false; }
     }
-    
-    // ========================================
-    // RENDER SIDEBAR (Seperti daftar chat)
-    // ========================================
-    function renderDatabaseList() {
-        const dbList = document.getElementById('databaseList');
-        if (!dbList) return;
-        
-        if (!sheetsList.length) {
-            dbList.innerHTML = `<div style="padding:20px;text-align:center;color:gray;">Tidak ada database</div>`;
-            return;
-        }
-        
-        const icons = {
-            "Ebook": "📚", "Produk": "🛒", "Pelanggan": "👥", "TemplateChat": "💬",
-            "Affiliate": "🔗", "PromptAI": "🤖", "IdeKonten": "💡", "Notes": "📝"
-        };
-        
-        dbList.innerHTML = sheetsList.map(sheet => {
-            const count = allSheetsData[sheet]?.length || 0;
-            const icon = icons[sheet] || "📄";
-            const activeClass = (currentSheet === sheet) ? 'active' : '';
-            return `
-                <div class="db-item ${activeClass}" data-sheet="${escapeHtml(sheet)}">
-                    <div class="db-icon">${icon}</div>
-                    <div class="db-info">
-                        <div class="db-name">${escapeHtml(sheet)}</div>
-                        <div class="db-count">📊 ${count} pesan</div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-        
-        // Attach event listeners
-        document.querySelectorAll('.db-item').forEach(el => {
+
+    // ========== SIDEBAR RENDER ==========
+    function renderSidebar() {
+        let menuDiv = document.getElementById('databaseList');
+        if(!menuDiv) return;
+        let icons = { "Ebook":"📚","Produk":"🛒","Pelanggan":"👥","TemplateChat":"💬","Affiliate":"🔗","PromptAI":"🧠","IdeKonten":"💡","Notes":"📝","ReadingProgress":"📖","Bookmarks":"🔖" };
+        let html = `<div class="menu-item" data-db="dashboard"><div class="menu-emoji">📊</div><div class="menu-name">Dashboard</div></div>`;
+        html += `<div class="menu-separator">━━ DATABASE ━━</div>`;
+        sheetsList.forEach(sheet => {
+            let count = allSheetsData[sheet]?.length || 0;
+            html += `<div class="menu-item" data-db="${escapeHtml(sheet)}"><div class="menu-emoji">${icons[sheet] || "📄"}</div><div class="menu-name">${escapeHtml(sheet)}</div><div class="menu-badge">${count}</div></div>`;
+        });
+        menuDiv.innerHTML = html;
+        document.querySelectorAll('.menu-item[data-db]').forEach(el => {
             el.addEventListener('click', () => {
-                const sheet = el.dataset.sheet;
-                if (sheet) loadSheet(sheet);
-                if (window.innerWidth <= 768) toggleSidebar(false);
+                let db = el.getAttribute('data-db');
+                if(db === 'dashboard') showDashboard();
+                else loadSheetData(db);
+                if(window.innerWidth <= 680) closeSidebar();
+                document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+                el.classList.add('active');
             });
         });
+        let activeDb = (currentSheet && currentView==='sheet') ? currentSheet : 'dashboard';
+        let activeEl = document.querySelector(`.menu-item[data-db="${activeDb}"]`);
+        if(activeEl) activeEl.classList.add('active');
     }
-    
-    // ========================================
-    // LOAD SHEET & TAMPILKAN SEPERTI CHAT WA
-    // ========================================
-    async function loadSheet(sheetName) {
+
+    // ========== DASHBOARD ==========
+    function showDashboard() {
+        currentView = 'dashboard';
+        currentSheet = null;
+        document.getElementById('chatTitle').innerText = '🏠 Dashboard';
+        document.getElementById('chatSubtitle').innerText = `📁 ${sheetsList.length} database • ${Object.values(allSheetsData).reduce((a,b)=>a+(b?.length||0),0)} item`;
+        let totalItems = Object.values(allSheetsData).reduce((a,b)=>a+(b?.length||0),0);
+        let html = `<div class="empty-state" style="text-align:left;"><strong>✨ Creator Vault</strong><br><br>📊 Total: ${totalItems} item<br>📂 Kategori: ${sheetsList.length}<br><br>🔍 Klik menu di samping atau cari pesan.<br>💡 Klik item untuk salin kolom 5 & 6 (data terbaru).</div>`;
+        document.getElementById('messagesContainer').innerHTML = html;
+    }
+
+    // ========== LOAD SHEET (TAMPILAN PESAN SEPERTI WA) ==========
+    function loadSheetData(sheetName) {
+        currentView = 'sheet';
         currentSheet = sheetName;
-        currentData = allSheetsData[sheetName] || [];
-        lastSearchResults = [];
-        
-        document.getElementById('currentTitle').innerHTML = `💬 ${escapeHtml(sheetName)}`;
-        document.getElementById('searchInput').value = '';
-        document.getElementById('clearSearchBtn').classList.remove('show');
-        
-        renderMessages(currentData, sheetName);
-        renderDatabaseList(); // update active state
+        let data = allSheetsData[sheetName] || [];
+        currentDataItems = data;
+        document.getElementById('chatTitle').innerText = sheetName;
+        document.getElementById('chatSubtitle').innerText = `${data.length} pesan • ketuk untuk salin`;
+        renderMessageList(data, sheetName);
     }
-    
-    function renderMessages(data, source) {
-        const container = document.getElementById('messagesContainer');
-        if (!data.length) {
-            container.innerHTML = `<div class="loading-state"><span style="font-size:48px;">📭</span><p>Tidak ada pesan di ${escapeHtml(source)}</p></div>`;
-            return;
-        }
-        
+
+    function renderMessageList(data, source) {
+        let container = document.getElementById('messagesContainer');
+        if(!data.length) { container.innerHTML = `<div class="empty-state">📭 Tidak ada data di ${escapeHtml(source)}</div>`; return; }
         let html = '';
         data.forEach((item, idx) => {
-            // Ambil judul dari kolom pertama
-            const title = Object.values(item)[0] || "Tanpa judul";
-            // Preview dari kolom ke-3 atau ke-4
-            const previewText = (Object.values(item)[3] || Object.values(item)[2] || Object.values(item)[1] || "");
-            const preview = previewText.substring(0, 70);
-            
+            let title = Object.values(item)[0] || "Tanpa judul";
+            let preview = (Object.values(item)[3] || Object.values(item)[2] || Object.values(item)[1] || "").substring(0, 70);
             html += `
-                <div class="chat-item" onclick="showDetailModal('${source}', ${idx})">
-                    <div class="chat-avatar">📄</div>
-                    <div class="chat-bubble">
-                        <div class="chat-title">
-                            <span>${escapeHtml(title.substring(0, 45))}</span>
-                            <span class="sheet-badge">${escapeHtml(source)}</span>
-                        </div>
-                        <div class="chat-preview">${escapeHtml(preview)}</div>
+                <div class="message-row" data-idx="${idx}" data-sheet="${escapeHtml(source)}">
+                    <div class="message-bubble">
+                        <div class="message-sheet-badge">📌 ${escapeHtml(source)}</div>
+                        <div class="message-title">${escapeHtml(title.substring(0, 45))}</div>
+                        <div class="message-preview">${escapeHtml(preview)}</div>
+                        <div class="copy-hint">✨ ketuk untuk salin kolom 5 & 6</div>
                     </div>
                 </div>
             `;
         });
-        
         container.innerHTML = html;
+        // event listener setiap item
+        document.querySelectorAll('.message-row').forEach(row => {
+            row.addEventListener('click', (e) => {
+                e.stopPropagation();
+                let idx = parseInt(row.dataset.idx);
+                let sheet = row.dataset.sheet;
+                let itemData = allSheetsData[sheet]?.[idx];
+                if(itemData) openCopyModal(itemData, sheet);
+            });
+        });
     }
-    
-    // ========================================
-    // FUNGSI SEARCH (Tidak lompat, realtime)
-    // ========================================
-    let searchTimeout;
-    function initSearch() {
-        const input = document.getElementById('searchInput');
-        const clearBtn = document.getElementById('clearSearchBtn');
+
+    // ========== MODAL KHUSUS KOLOM 5 & 6 (INDEX ke 5 & 6) ==========
+    function openCopyModal(item, sheetName) {
+        // Ambil semua value dalam bentuk array sesuai urutan objek
+        const valuesArray = Object.values(item);
+        // Kolom ke-5 = index 4, Kolom ke-6 = index 5 (karena urutan 1-based)
+        let col5 = valuesArray[4] !== undefined ? valuesArray[4] : "";
+        let col6 = valuesArray[5] !== undefined ? valuesArray[5] : "";
         
+        const keysArray = Object.keys(item);
+        let label5 = keysArray[4] || "Kolom 5";
+        let label6 = keysArray[5] || "Kolom 6";
+        
+        let modalBody = document.getElementById('modalCopyContent');
+        modalBody.innerHTML = `
+            <div style="margin-bottom:12px; font-size:13px; color:var(--text-secondary);">📄 Dari: <strong>${escapeHtml(sheetName)}</strong></div>
+            <div class="copy-col" id="copyCol5Btn">
+                <div class="col-label">📋 ${escapeHtml(label5)} (Kolom 5)</div>
+                <div class="col-value">${escapeHtml(String(col5)) || '-'}</div>
+            </div>
+            <div class="copy-col" id="copyCol6Btn">
+                <div class="col-label">📋 ${escapeHtml(label6)} (Kolom 6)</div>
+                <div class="col-value">${escapeHtml(String(col6)) || '-'}</div>
+            </div>
+            <div style="font-size:11px; color:var(--text-secondary); margin-top:12px; text-align:center;">✨ Klik pada kotak untuk menyalin teks</div>
+        `;
+        document.getElementById('copyModal').classList.add('active');
+        
+        document.getElementById('copyCol5Btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyText(String(col5), label5);
+        });
+        document.getElementById('copyCol6Btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyText(String(col6), label6);
+        });
+    }
+
+    // ========== SEARCH GLOBAL (Semua Database) ==========
+    let searchTimeout = null;
+    function initSearch() {
+        let input = document.getElementById('globalSearch');
+        let clearBtn = document.getElementById('clearGlobalSearch');
         input.addEventListener('input', (e) => {
-            const keyword = e.target.value;
-            if (keyword.length > 0) {
-                clearBtn.classList.add('show');
-            } else {
-                clearBtn.classList.remove('show');
-            }
-            
-            clearTimeout(searchTimeout);
+            let kw = e.target.value.trim();
+            if(kw.length > 0) clearBtn.classList.add('show');
+            else clearBtn.classList.remove('show');
+            if(searchTimeout) clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
-                if (keyword.length === 0) {
-                    if (currentSheet) loadSheet(currentSheet);
-                    else loadAllData();
-                } else if (keyword.length >= 2) {
-                    performSearch(keyword);
+                if(kw.length === 0) {
+                    if(currentSheet) loadSheetData(currentSheet);
+                    else showDashboard();
+                    return;
                 }
+                if(kw.length < 2) return;
+                performSearch(kw);
             }, 300);
         });
-        
         clearBtn.addEventListener('click', () => {
             input.value = '';
             clearBtn.classList.remove('show');
-            if (currentSheet) loadSheet(currentSheet);
-            else loadAllData();
             input.focus();
+            if(currentSheet) loadSheetData(currentSheet);
+            else showDashboard();
         });
     }
-    
+
     async function performSearch(keyword) {
-        const container = document.getElementById('messagesContainer');
-        container.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>🔍 Mencari "${escapeHtml(keyword)}"...</p></div>`;
-        
-        const results = [];
-        for (const [sheet, data] of Object.entries(allSheetsData)) {
-            for (const item of data) {
-                let found = false;
-                for (const val of Object.values(item)) {
-                    if (val && String(val).toLowerCase().includes(keyword.toLowerCase())) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (found) results.push({ sheet, ...item });
+        let results = [];
+        for(let [sheet, items] of Object.entries(allSheetsData)) {
+            for(let it of items) {
+                let match = Object.values(it).some(v => v && String(v).toLowerCase().includes(keyword.toLowerCase()));
+                if(match) results.push({ sheet, data: it });
             }
         }
-        
-        lastSearchResults = results;
-        document.getElementById('currentTitle').innerHTML = `🔍 Hasil: "${escapeHtml(keyword)}"`;
-        
-        if (!results.length) {
-            container.innerHTML = `<div class="loading-state"><span style="font-size:48px;">🔍</span><p>Tidak ada hasil untuk "${escapeHtml(keyword)}"</p></div>`;
+        searchResults = results;
+        currentView = 'search';
+        document.getElementById('chatTitle').innerHTML = `🔍 "${escapeHtml(keyword)}"`;
+        document.getElementById('chatSubtitle').innerHTML = `${results.length} hasil ditemukan`;
+        if(results.length === 0) {
+            document.getElementById('messagesContainer').innerHTML = `<div class="empty-state">🔎 Tidak ada hasil untuk "${escapeHtml(keyword)}"</div>`;
             return;
         }
-        
         let html = '';
-        results.forEach((item, idx) => {
-            const title = item.judul || item.nama || item.title || Object.values(item)[0] || "Tanpa judul";
-            const preview = (Object.values(item)[3] || Object.values(item)[2] || "").substring(0, 70);
+        results.slice(0, 100).forEach((res, idx) => {
+            let title = Object.values(res.data)[0] || "Item";
+            let preview = (Object.values(res.data)[3] || Object.values(res.data)[2] || "").substring(0, 70);
             html += `
-                <div class="chat-item" onclick="showSearchDetailModal(${idx})">
-                    <div class="chat-avatar">🔍</div>
-                    <div class="chat-bubble">
-                        <div class="chat-title">
-                            <span>${escapeHtml(title.substring(0, 45))}</span>
-                            <span class="sheet-badge">${escapeHtml(item.sheet)}</span>
-                        </div>
-                        <div class="chat-preview">${escapeHtml(preview)}</div>
+                <div class="message-row" data-searchidx="${idx}">
+                    <div class="message-bubble">
+                        <div class="message-sheet-badge">📁 ${escapeHtml(res.sheet)}</div>
+                        <div class="message-title">${escapeHtml(title.substring(0, 45))}</div>
+                        <div class="message-preview">${escapeHtml(preview)}</div>
+                        <div class="copy-hint">✨ klik salin kolom spesifik</div>
                     </div>
                 </div>
             `;
         });
-        container.innerHTML = html;
-    }
-    
-    // ========================================
-    // MODAL DENGAN FOKUS KOLOM 5 DAN 6 (INDEX 5 & 6)
-    // Kolom ke-5 = index 4, Kolom ke-6 = index 5 (0-based)
-    // ========================================
-    function showDetailModal(sheetName, idx) {
-        const data = allSheetsData[sheetName];
-        const item = data[idx];
-        if (!item) return;
-        
-        const entries = Object.entries(item);
-        // Kolom 5 = index ke-4, Kolom 6 = index ke-5
-        const col5 = entries[4] || null;
-        const col6 = entries[5] || null;
-        
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
-        modalTitle.innerHTML = `📋 ${escapeHtml(sheetName)} · Klik kolom untuk salin`;
-        
-        let bodyHtml = `<div style="margin-bottom:12px;"><small style="color:var(--text-secondary);">✨ Klik pada kolom 5 & 6 untuk menyalin teks</small></div>`;
-        
-        // Tampilkan semua kolom (info biasa, tidak bisa copy)
-        entries.forEach(([key, val], index) => {
-            const isCopyable = (index === 4 || index === 5); // kolom 5 dan 6
-            const displayValue = val ? String(val) : "-";
-            
-            if (isCopyable) {
-                bodyHtml += `
-                    <div class="copyable-row" onclick="copySpecificText('${escapeHtml(displayValue).replace(/'/g, "\\'")}', 'Kolom ${index+1} - ${escapeHtml(key)}')">
-                        <div class="copyable-label">📋 KOPI • ${escapeHtml(key)}</div>
-                        <div class="copyable-value">${escapeHtml(displayValue)}</div>
-                    </div>
-                `;
-            } else {
-                bodyHtml += `
-                    <div class="info-row">
-                        <div class="info-label">${escapeHtml(key)}</div>
-                        <div class="info-value">${escapeHtml(displayValue)}</div>
-                    </div>
-                `;
-            }
+        document.getElementById('messagesContainer').innerHTML = html;
+        document.querySelectorAll('.message-row').forEach((row, i) => {
+            row.addEventListener('click', () => {
+                let itemData = searchResults[i]?.data;
+                let sheetName = searchResults[i]?.sheet;
+                if(itemData) openCopyModal(itemData, sheetName);
+            });
         });
-        
-        modalBody.innerHTML = bodyHtml;
-        document.getElementById('detailModal').classList.add('active');
     }
+
+    // ========== MOBILE SIDEBAR ==========
+    function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('mobileOverlay').classList.add('active'); }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('mobileOverlay').classList.remove('active'); }
     
-    function showSearchDetailModal(idx) {
-        const item = lastSearchResults[idx];
-        if (!item) return;
-        
-        const entries = Object.entries(item).filter(([k]) => k !== 'sheet');
-        const col5 = entries[4] || null;
-        const col6 = entries[5] || null;
-        
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
-        modalTitle.innerHTML = `📋 ${escapeHtml(item.sheet || 'Detail')} · Klik kolom untuk salin`;
-        
-        let bodyHtml = `<div style="margin-bottom:12px;"><small>✨ Klik pada kolom 5 & 6 untuk menyalin</small></div>`;
-        
-        entries.forEach(([key, val], index) => {
-            const isCopyable = (index === 4 || index === 5);
-            const displayValue = val ? String(val) : "-";
-            
-            if (isCopyable) {
-                bodyHtml += `
-                    <div class="copyable-row" onclick="copySpecificText('${escapeHtml(displayValue).replace(/'/g, "\\'")}', 'Kolom ${index+1} - ${escapeHtml(key)}')">
-                        <div class="copyable-label">📋 SALIN • ${escapeHtml(key)}</div>
-                        <div class="copyable-value">${escapeHtml(displayValue)}</div>
-                    </div>
-                `;
-            } else {
-                bodyHtml += `
-                    <div class="info-row">
-                        <div class="info-label">${escapeHtml(key)}</div>
-                        <div class="info-value">${escapeHtml(displayValue)}</div>
-                    </div>
-                `;
-            }
-        });
-        
-        modalBody.innerHTML = bodyHtml;
-        document.getElementById('detailModal').classList.add('active');
-    }
-    
-    async function copySpecificText(text, label) {
-        try {
-            await navigator.clipboard.writeText(text);
-            showToast(`✅ Tersalin: ${label.substring(0, 30)}`);
-        } catch(e) {
-            showToast("❌ Gagal menyalin");
-        }
-    }
-    
-    function showToast(msg) {
-        let toast = document.querySelector('.toast-message');
-        if (toast) toast.remove();
-        toast = document.createElement('div');
-        toast.className = 'toast-message';
-        toast.innerText = msg;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
-    }
-    
-    function closeModal() {
-        document.getElementById('detailModal').classList.remove('active');
-    }
-    
-    // ========================================
-    // THEME MODE (Perbaikan popup gelap)
-    // ========================================
-    function initTheme() {
-        if (isDark) {
-            document.body.classList.add('dark');
-        }
-        updateThemeButton();
-    }
-    
-    function toggleTheme() {
-        isDark = !isDark;
-        if (isDark) {
-            document.body.classList.add('dark');
-            localStorage.setItem('wa_theme', 'dark');
-        } else {
-            document.body.classList.remove('dark');
-            localStorage.setItem('wa_theme', 'light');
-        }
-        updateThemeButton();
-    }
-    
-    function updateThemeButton() {
-        const btn = document.getElementById('themeToggleBtn');
-        if (btn) btn.innerHTML = isDark ? '☀️' : '🌙';
-    }
-    
-    // ========================================
-    // RELOAD & MOBILE
-    // ========================================
-    async function fullReload() {
-        if (isLoading) { showToast("⏳ Masih memuat..."); return; }
-        showToast("🔄 Memuat ulang semua data...");
-        await loadAllData(true);
-    }
-    
-    function toggleSidebar(open) {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        if (open) {
-            sidebar.classList.add('open');
-            overlay.classList.add('active');
-        } else {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('active');
-        }
-    }
-    
-    function showEmptyState() {
-        const container = document.getElementById('messagesContainer');
-        container.innerHTML = `<div class="loading-state"><p>Pilih database dari menu samping</p></div>`;
-    }
-    
-    // ========================================
-    // INIT FULL (Reload saat pertama buka)
-    // ========================================
-    window.showDetailModal = showDetailModal;
-    window.showSearchDetailModal = showSearchDetailModal;
+    function closeModal() { document.getElementById('copyModal').classList.remove('active'); }
     window.closeModal = closeModal;
-    window.copySpecificText = copySpecificText;
-    window.fullReload = fullReload;
-    
+
+    // ========== REFRESH FULL ==========
+    async function fullRefresh() {
+        if(isLoading) { showToast("Masih memuat..."); return; }
+        showToast("🔄 Refresh data...");
+        await loadAllData(true);
+        if(currentSheet && allSheetsData[currentSheet]) loadSheetData(currentSheet);
+        else showDashboard();
+    }
+
+    // ========== INIT ==========
     document.addEventListener('DOMContentLoaded', async () => {
-        initTheme();
+        applyTheme();
+        document.getElementById('themeToggleBtn').onclick = toggleTheme;
+        document.getElementById('refreshSidebarBtn').onclick = fullRefresh;
+        document.getElementById('refreshDataBtn').onclick = fullRefresh;
+        document.getElementById('backToSidebar').onclick = () => closeSidebar();
+        document.getElementById('mobileOverlay').onclick = closeSidebar;
+        
+        await loadAllData(false);
         initSearch();
         
-        document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
-        document.getElementById('refreshSidebarBtn')?.addEventListener('click', fullReload);
-        document.getElementById('refreshMainBtn')?.addEventListener('click', fullReload);
-        document.getElementById('mobileMenuBtn')?.addEventListener('click', () => toggleSidebar(true));
-        document.getElementById('sidebarOverlay')?.addEventListener('click', () => toggleSidebar(false));
-        
-        // LOAD PERTAMA KALI (MAXIMALKAN RELOAD)
-        await loadAllData(true);
+        // Event buka sidebar mobile
+        const chatHeader = document.querySelector('.chat-header');
+        if(chatHeader) {
+            let fakeMenuBtn = document.createElement('button');
+            fakeMenuBtn.innerHTML = '☰';
+            fakeMenuBtn.className = 'icon-btn';
+            fakeMenuBtn.style.background = 'rgba(255,255,255,0.1)';
+            fakeMenuBtn.style.marginRight = '8px';
+            fakeMenuBtn.onclick = openSidebar;
+            chatHeader.insertBefore(fakeMenuBtn, chatHeader.firstChild);
+        }
     });
-    
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str).replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-            return c;
-        });
-    }
 </script>
 </body>
 </html>
+```
